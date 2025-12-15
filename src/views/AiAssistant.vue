@@ -10,7 +10,7 @@ const md = new MarkdownIt();
 // Idéalement, passez par votre backend (server.js).
 // Pour ce prototype, nous l'utilisons ici avec "dangerouslyAllowBrowser: true".
 const groq = new Groq({
-    apiKey: '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',
+    apiKey: import.meta.env.VITE_GROQ_API_KEY,
     dangerouslyAllowBrowser: true
 });
 
