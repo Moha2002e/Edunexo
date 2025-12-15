@@ -1,3 +1,4 @@
+<script setup>
 import { ref, watch, onMounted } from 'vue';
 import { User, Mail, Bell, Moon, Save, LogOut } from 'lucide-vue-next';
 import { auth } from '../firebase/firebase';
