@@ -1,9 +1,11 @@
 <script setup>
-import { ref, watch } from 'vue';
-import { Sparkles, Copy, Check, BookOpen, Send, FileText, BrainCircuit, HelpCircle, Lock, Calendar, PlayCircle, RefreshCw, Repeat, Download } from 'lucide-vue-next';
+import { ref, onMounted } from 'vue';
+import { Sparkles, Copy, BookOpen, Send, Download, History, Clock, Trash2, X, RefreshCw, Repeat, Check, Lock, BrainCircuit } from 'lucide-vue-next';
 import { usePremium } from '../firebase/usePremium';
 import { useAiAssistant } from '../composables/useAiAssistant';
-import { auth } from '../firebase/firebase';
+import { auth, db } from '../firebase/firebase';
+import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import MarkdownIt from 'markdown-it';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -13,7 +15,9 @@ const { generatedContent, quizData, flashcardData, planningData, isLoading, gene
     import.meta.env.VITE_GROQ_API_KEY
 );
 
-// UI State (View specific)
+const md = new MarkdownIt();
+
+// UI State
 const selectedMode = ref('summary'); 
 const inputText = ref('');
 const questionCount = ref(10); 
@@ -21,89 +25,110 @@ const showCopyFeedback = ref(false);
 const currentQuizScore = ref(0);
 const quizCompleted = ref(false);
 const userAnswers = ref({}); 
+const flippedCards = ref({});
+const history = ref([]);
+const showHistory = ref(false);
 
-// Flashcard State
-const flippedCards = ref({}); // { index: boolean }
-
-// Computed check for access
 const isAdmin = () => auth.currentUser?.email === 'admin@edunexo.com';
 const hasAccess = () => isPremium.value || isAdmin();
 
-/**
- * GENERATION HANDLER (Delegates to Composable)
- */
-const generate = () => {
-    // Reset States
+// History Logic
+const loadHistory = async () => {
+    if (!auth.currentUser) return;
+    try {
+        const q = query(collection(db, 'users', auth.currentUser.uid, 'ai_history'), orderBy('createdAt', 'desc'), limit(10));
+        const snap = await getDocs(q);
+        history.value = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) { console.error(e); }
+};
+
+const restoreFromHistory = (item) => {
+    // Reset all
+    generatedContent.value = '';
+    quizData.value = null;
+    flashcardData.value = null;
+    planningData.value = null;
+    inputText.value = item.fullInput || item.input;
+    selectedMode.value = item.mode;
+    showHistory.value = false;
+
+    // Restore based on type
+    if (item.type === 'json' || item.mode === 'quiz' || item.mode === 'flashcard') {
+        try {
+            const parsed = JSON.parse(item.result);
+            if (item.mode === 'quiz') quizData.value = parsed.questions || parsed;
+            if (item.mode === 'flashcard') flashcardData.value = parsed.cards || parsed;
+            if (item.mode === 'planning') planningData.value = parsed;
+        } catch(e) { console.error("Restore error", e); }
+    } else {
+        generatedContent.value = md.render(item.result);
+    }
+};
+
+const deleteHistoryItem = async (id) => {
+    try {
+        await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'ai_history', id));
+        history.value = history.value.filter(h => h.id !== id);
+    } catch(e) {}
+};
+
+onMounted(() => {
+    auth.onAuthStateChanged((user) => {
+        if (user) loadHistory();
+    });
+});
+
+const generate = async () => {
     quizCompleted.value = false;
     currentQuizScore.value = 0;
     userAnswers.value = {};
     flippedCards.value = {};
     
-    // Call Logic
-    generateAiResponse(
+    await generateAiResponse(
         selectedMode.value, 
         inputText.value, 
         hasAccess(), 
         { questionCount: questionCount.value }
     );
+    // Reload history after generation
+    loadHistory();
 };
 
 const downloadPDF = () => {
     let elementId = 'ai-result-content';
     if (selectedMode.value === 'quiz') elementId = 'quiz-result-container';
     else if (selectedMode.value === 'planning') elementId = 'planning-result-container';
-    else if (selectedMode.value === 'flashcard') return; // Not really printable in 3D
+    else if (selectedMode.value === 'flashcard') return; 
 
     const element = document.getElementById(elementId);
     if (!element) return;
     
-    // Clone options to avoid persisting changes (optional but safer)
-    const opt = {
-      margin:       0.5,
-      filename:     `Edunexo_${selectedMode.value}_${new Date().toISOString().slice(0,10)}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    
-    html2pdf().set(opt).from(element).save();
+    html2pdf().set({
+      margin: 0.5,
+      filename: `Edunexo_${selectedMode.value}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    }).from(element).save();
 };
 
-/**
- * UI HELPERS
- */
-
-const selectAnswer = (qIndex, oIndex) => {
-    if (quizCompleted.value) return; 
-    userAnswers.value[qIndex] = oIndex;
-};
-
+// ... QUIZ & FLASHCARD HELPERS (kept same) ...
+const selectAnswer = (qIndex, oIndex) => { if (!quizCompleted.value) userAnswers.value[qIndex] = oIndex; };
 const submitQuiz = () => {
     if(!quizData.value) return;
     let score = 0;
-    quizData.value.forEach((q, idx) => {
-        if (userAnswers.value[idx] === q.correctIndex) {
-            score++;
-        }
-    });
+    quizData.value.forEach((q, idx) => { if (userAnswers.value[idx] === q.correctIndex) score++; });
     currentQuizScore.value = score;
     quizCompleted.value = true;
 };
-
 const getOptionClass = (qIndex, oIndex) => {
-    if (!quizCompleted.value) {
-        return userAnswers.value[qIndex] === oIndex ? 'selected' : '';
-    }
+    if (!quizCompleted.value) return userAnswers.value[qIndex] === oIndex ? 'selected' : '';
     const q = quizData.value[qIndex];
-    if (oIndex === q.correctIndex) return 'correct'; 
-    if (userAnswers.value[qIndex] === oIndex && oIndex !== q.correctIndex) return 'wrong';
+    if (oIndex === q.correctIndex) return 'correct';
+    if (userAnswers.value[qIndex] === oIndex) return 'wrong';
     return 'dimmed';
 };
-
-const flipCard = (index) => {
-    flippedCards.value[index] = !flippedCards.value[index];
-};
-
+const flipCard = (index) => { flippedCards.value[index] = !flippedCards.value[index]; };
 const copyToClipboard = async () => {
     try {
         const text = generatedContent.value.replace(/<[^>]*>?/gm, '');
@@ -115,13 +140,44 @@ const copyToClipboard = async () => {
 </script>
 
 <template>
-  <div class="container">
+  <div class="container relative">
+    
+    <!-- Header -->
     <div class="header-section">
-      <h1><Sparkles size="28" style="color:#7E22CE; vertical-align: bottom; margin-right: 8px;"/> Assistant Intelligent</h1>
-      <p style="color:var(--text-light);">Ton tuteur personnel débloqué (Quiz, Fiches, Explications, Flashcards).</p>
+      <div class="flex-between">
+          <div>
+            <h1><Sparkles size="28" style="color:#7E22CE; vertical-align: bottom; margin-right: 8px;"/> Assistant Intelligent</h1>
+            <p style="color:var(--text-light);">Ton tuteur personnel débloqué.</p>
+          </div>
+          <button @click="showHistory = !showHistory" class="history-btn">
+            <History size="20" /> Historique
+          </button>
+      </div>
     </div>
 
-    <!-- Premium Gate Banner -->
+    <!-- History Drawer -->
+    <div class="history-drawer" :class="{ 'open': showHistory }">
+        <div class="drawer-header">
+            <h3>🗂️ Mes Archives</h3>
+            <button @click="showHistory = false" class="close-btn"><X size="20"/></button>
+        </div>
+        <div class="history-list">
+            <div v-if="history.length === 0" class="empty-hist">Aucun historique</div>
+            <div v-for="item in history" :key="item.id" class="history-item" @click="restoreFromHistory(item)">
+                <div class="hist-icon">
+                    <BrainCircuit v-if="item.mode === 'summary'" size="16"/>
+                    <Sparkles v-else size="16"/>
+                </div>
+                <div class="hist-content">
+                    <span class="hist-mode">{{ item.mode }}</span>
+                    <span class="hist-preview">{{ item.input.substring(0, 30) }}...</span>
+                </div>
+                <button @click.stop="deleteHistoryItem(item.id)" class="del-btn"><Trash2 size="14"/></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Gate -->
     <div v-if="!isPremiumLoading && !hasAccess()" class="premium-gate">
         <Lock size="48" class="lock-icon" />
         <h2>Fonctionnalité Premium</h2>
@@ -148,25 +204,16 @@ const copyToClipboard = async () => {
         </div>
 
         <div class="input-area">
-            <label v-if="selectedMode === 'planning'">Examens et Objectifs :</label>
-            <label v-else-if="selectedMode === 'quiz' || selectedMode === 'flashcard'">Contenu source :</label>
-            <label v-else-if="selectedMode === 'qa'">Ta question :</label>
-            <label v-else-if="selectedMode === 'improve'">Texte à corriger :</label>
-            <label v-else>Ton cours :</label>
-
-            <!-- Quiz Options -->
-            <div v-if="selectedMode === 'quiz'" class="quiz-options">
-                <label>Nombre de questions :</label>
-                <div class="input-with-icon">
-                    <input type="number" v-model="questionCount" min="1" max="50" class="small-input" />
-                </div>
-            </div>
-
             <textarea 
                 v-model="inputText" 
-                :placeholder="selectedMode === 'qa' ? 'Pose ta question ici...' : (selectedMode === 'improve' ? 'Colle ton brouillon ici...' : 'Colle ton cours ici...')"
+                :placeholder="selectedMode === 'qa' ? 'Pose ta question...' : 'Colle ton cours ici...'"
                 rows="10">
             </textarea>
+             <!-- Quiz Options -->
+            <div v-if="selectedMode === 'quiz'" class="quiz-options">
+                <label>Nb Questions :</label>
+                <input type="number" v-model="questionCount" min="1" max="50" class="small-input" />
+            </div>
         </div>
 
         <button @click="generate" class="full-width" :disabled="isLoading || !inputText">
@@ -178,91 +225,54 @@ const copyToClipboard = async () => {
       <!-- Result Area -->
       <div class="card result-card">
         
-        <!-- Loading -->
         <div v-if="isLoading" class="loading-state">
-            <div class="spinner"></div>
-            <p>Intelligence Artificielle au travail...</p>
+            <div class="spinner"></div> <p>Analyse en cours...</p>
         </div>
 
-        <!-- Empty State -->
         <div v-else-if="!generatedContent && !quizData && !planningData && !flashcardData" class="placeholder-result">
-            <div class="placeholder-icon">
-                <BrainCircuit size="48" opacity="0.2" />
-            </div>
+            <BrainCircuit size="48" opacity="0.2" />
             <p>Le résultat s'affichera ici.</p>
         </div>
 
-        <!-- TEXT RESULT (Summary, Sheet, Explain, QA, Improve) -->
+        <!-- TEXT RESULT -->
         <div v-if="generatedContent" class="result-text-wrappeer">
              <div class="result-header">
                 <h3>Résultat</h3>
                 <div class="header-actions">
-                    <button @click="downloadPDF" class="icon-btn" title="Télécharger PDF"><Download size="16"/></button>
+                    <button @click="downloadPDF" class="icon-btn" title="PDF"><Download size="16"/></button>
                     <button @click="copyToClipboard" class="icon-btn" title="Copier"><Copy size="16"/></button>
                 </div>
             </div>
             <div id="ai-result-content" class="result-content markdown-body" v-html="generatedContent"></div>
         </div>
 
-        <!-- INTERACTIVE QUIZ RESULT -->
+        <!-- QUIZ RESULT -->
         <div v-if="quizData" id="quiz-result-container" class="quiz-interface">
             <div class="quiz-header">
                 <h3>Quiz de révision</h3>
-                <div class="header-actions">
-                     <button @click="downloadPDF" class="icon-btn" title="Télécharger le Quiz"><Download size="16"/></button>
-                     <span v-if="quizCompleted" class="score-badge" :style="{ background: currentQuizScore >= (quizData.length/2) ? '#10B981' : '#EF4444' }">
-                        Note : {{ currentQuizScore }}/{{ quizData.length }}
-                    </span>
-                </div>
+                <button @click="downloadPDF" class="icon-btn"><Download size="16"/></button>
             </div>
             <div v-for="(q, qIdx) in quizData" :key="qIdx" class="quiz-question">
                 <p class="q-text"><strong>{{ qIdx + 1 }}.</strong> {{ q.text }}</p>
                 <div class="options-grid">
-                    <!-- Removing click handlers for PDF view is hard, but css styles will persist -->
                     <button v-for="(opt, oIdx) in q.options" :key="oIdx" class="option-btn" :class="getOptionClass(qIdx, oIdx)" @click="selectAnswer(qIdx, oIdx)">
                         {{ opt }}
                     </button>
                 </div>
-                <!-- Force show answer in PDF? Maybe only if completed. -->
-                <div v-if="quizCompleted" class="explanation">💡 {{ q.explanation }}</div>
             </div>
-            <button v-if="!quizCompleted" @click="submitQuiz" class="btn-submit-quiz" data-html2canvas-ignore="true">Valider mes réponses</button>
-            <button v-else @click="generate" class="btn-retry" data-html2canvas-ignore="true"><RefreshCw size="16"/> Nouveau quiz</button>
+            <button v-if="!quizCompleted" @click="submitQuiz" class="btn-submit-quiz" data-html2canvas-ignore>Valider</button>
+            <div v-else class="score-badge main-score">Note: {{currentQuizScore}}/{{quizData.length}}</div>
         </div>
         
-        <!-- FLASHCARDS INTERFACE -->
+        <!-- FLASHCARDS -->
         <div v-if="flashcardData" class="flashcards-interface">
-            <div class="quiz-header"><h3>Cartes Mémoire ({{ flashcardData.length }})</h3></div>
-            <div class="cards-grid">
+             <h3>Flashcards</h3>
+             <div class="cards-grid">
                 <div v-for="(card, index) in flashcardData" :key="index" class="flashcard-container" @click="flipCard(index)">
                     <div class="flashcard-inner" :class="{ 'is-flipped': flippedCards[index] }">
-                         <div class="flashcard-front">
-                            <span class="card-label">Front</span>
-                            <p>{{ card.front }}</p>
-                            <Repeat size="16" class="flip-icon"/>
-                         </div>
-                         <div class="flashcard-back">
-                            <span class="card-label">Back</span>
-                            <p>{{ card.back }}</p>
-                         </div>
+                         <div class="flashcard-front"><p>{{ card.front }}</p></div>
+                         <div class="flashcard-back"><p>{{ card.back }}</p></div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PLANNING RESULT -->
-        <div v-if="planningData" class="planning-interface">
-            <h3>📅 Ton Planning Suggéré</h3>
-            <p class="planning-advice">"{{ planningData.advice }}"</p>
-            <div class="schedule-list">
-                <div v-for="(day, idx) in planningData.schedule" :key="idx" class="schedule-day">
-                    <div class="day-header">
-                        <span class="day-name">{{ day.day }}</span>
-                        <span class="day-focus">{{ day.focus }}</span>
-                    </div>
-                    <ul class="day-tasks">
-                        <li v-for="(t, tIdx) in day.tasks" :key="tIdx"><Check size="14" class="bullet-icon"/> {{ t }}</li>
-                    </ul>
                 </div>
             </div>
         </div>
@@ -273,193 +283,60 @@ const copyToClipboard = async () => {
 </template>
 
 <style scoped>
-/* Keeping previous styles + Flashcards */
-.premium-gate {
-    background: linear-gradient(135deg, #1e1e2e 0%, #312e81 100%);
-    color: white;
-    padding: 3rem;
-    border-radius: 20px;
-    text-align: center;
-    margin-bottom: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    position: relative;
-    z-index: 10;
-}
-.lock-icon { margin-bottom: 1rem; color: #F59E0B; }
-.btn-upgrade {
-    display: inline-block;
-    background: #F59E0B;
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    padding: 0.8rem 2rem;
-    border-radius: 99px;
-    margin-top: 1.5rem;
-    transition: transform 0.2s;
-}
-.btn-upgrade:hover { transform: scale(1.05); }
+/* Reusing previous styles + New History Drawer */
+.container { position: relative; overflow-x: hidden; }
+.flex-between { display: flex; justify-content: space-between; align-items: flex-end; }
+.history-btn { background: var(--surface); border: 1px solid var(--border-color); color: var(--text-dark); padding: 0.5rem 1rem; border-radius: 99px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; box-shadow: var(--shadow-sm); }
+.history-btn:hover { background: var(--bg-color); }
 
-.blurred { filter: blur(8px); opacity: 0.6; pointer-events: none; user-select: none; }
-.ai-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start; transition: filter 0.3s; }
-@media (max-width: 900px) { .ai-grid { grid-template-columns: 1fr; } }
-.section-label { display: block; font-weight: 700; margin-bottom: 0.5rem; color: #4B5563; }
-.select-wrapper { position: relative; margin-bottom: 1.5rem; }
-.mode-select { width: 100%; padding: 1rem; border-radius: 12px; border: 2px solid #E5E7EB; font-size: 1rem; font-weight: 600; color: #374151; cursor: pointer; background: white; appearance: none; }
-.mode-select:focus { border-color: var(--primary); outline: none; }
-.quiz-options { margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
-.quiz-options label { margin-bottom: 0 !important; }
-.small-input { width: 80px; padding: 0.5rem; border-radius: 8px; border: 2px solid #E5E7EB; text-align: center; }
-.input-area label { font-size: 0.9rem; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; display: block; }
-textarea { width: 100%; padding: 1rem; border: 2px solid #E9D5FF; border-radius: 16px; resize: vertical; font-family: inherit; margin-bottom: 1.5rem; font-size: 0.95rem; transition: all 0.2s; background: #FAFAFA; }
-textarea:focus { border-color: #A855F7; background: white; box-shadow: 0 0 0 4px #F3E8FF; outline: none; }
-.full-width { background: linear-gradient(135deg, #9333EA, #7E22CE); color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 600; width: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; }
-.full-width:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(126, 34, 206, 0.3); }
-.full-width:disabled { opacity: 0.7; cursor: not-allowed; }
-.result-card { min-height: 500px; border: 1px solid #E9D5FF; box-shadow: 0 10px 40px -10px rgba(91, 33, 182, 0.1); background: white; border-radius: 16px; padding: 0; overflow: hidden; }
-.placeholder-result { padding: 4rem; text-align: center; color: #9CA3AF; }
-.loading-state { padding: 4rem; text-align: center; color: #7E22CE; }
-.spinner { width: 40px; height: 40px; border: 3px solid #F3E8FF; border-top: 3px solid #9333EA; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem; }
-@keyframes spin { 0% {transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-.result-header { background: #F9FAFB; padding: 1rem 1.5rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; }
-.header-actions { display: flex; gap: 0.5rem; }
-.result-content { padding: 2rem; line-height: 1.7; color: #374151; }
-.quiz-interface, .planning-interface, .flashcards-interface { padding: 2rem; }
-.quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #F3F4F6; padding-bottom: 1rem; }
-.score-badge { padding: 0.5rem 1rem; border-radius: 8px; font-weight: bold; color: white; }
-.quiz-question { margin-bottom: 2.5rem; }
-.q-text { font-size: 1.1rem; margin-bottom: 1rem; color: #111827; }
-.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
-.option-btn { padding: 1rem; border: 2px solid #E5E7EB; background: white; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s; font-size: 0.95rem; }
-.option-btn:hover:not(.correct):not(.wrong) { border-color: #9333EA; background: #FAF5FF; }
-.option-btn.selected { border-color: #9333EA; background: #F3E8FF; color: #6B21A8; font-weight: 600; }
-.option-btn.correct { border-color: #10B981; background: #D1FAE5; color: #065F46; }
-.option-btn.wrong { border-color: #EF4444; background: #FEE2E2; opacity: 0.8; }
-.option-btn.dimmed { opacity: 0.5; cursor: default; }
-.explanation { margin-top: 1rem; padding: 1rem; background: #FEF3C7; border-radius: 8px; color: #92400E; font-size: 0.9rem; }
-.btn-submit-quiz { width: 100%; padding: 1rem; background: #111827; color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-.btn-retry { margin-top: 1rem; background: transparent; border: 2px solid #E5E7EB; color: #374151; padding: 0.8rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
-
-/* FLASHCARDS */
-.cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-.flashcard-container {
-    perspective: 1000px;
-    height: 200px;
-    cursor: pointer;
-}
-.flashcard-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
-}
-.flashcard-inner.is-flipped {
-    transform: rotateY(180deg);
-}
-.flashcard-front, .flashcard-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border: 1px solid #E9D5FF;
-    border-radius: 16px;
+.history-drawer {
+    position: fixed;
+    top: 0; right: -320px;
+    width: 320px;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -5px 0 20px rgba(0,0,0,0.1);
+    z-index: 200;
+    transition: right 0.3s ease;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
 }
-.flashcard-front {
-    background: white;
-    color: var(--text-dark);
-}
-.flashcard-back {
-    background: linear-gradient(135deg, #7E22CE, #9333EA);
-    color: white;
-    transform: rotateY(180deg);
-}
-.card-label {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.5;
-}
-.flip-icon {
-    position: absolute;
-    bottom: 15px;
-    opacity: 0.3;
-}
+.history-drawer.open { right: 0; }
+.drawer-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.history-list { flex: 1; overflow-y: auto; padding: 1rem; }
+.history-item { padding: 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; gap: 10px; align-items: start; transition: background 0.2s; border-radius: 8px; }
+.history-item:hover { background: var(--bg-color); }
+.hist-content { flex: 1; display: flex; flex-direction: column; }
+.hist-mode { font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; }
+.hist-preview { font-size: 0.85rem; color: var(--text-light); }
+.del-btn { color: #EF4444; background: none; border: none; cursor: pointer; opacity: 0; }
+.history-item:hover .del-btn { opacity: 1; }
 
-/* Result Content - Document Style */
-.result-content { 
-    padding: 2.5rem; 
-    line-height: 1.8; 
-    color: #374151; 
-    font-size: 1.05rem;
-}
-
-:deep(.markdown-body h1) { 
-    font-size: 1.8rem; 
-    color: #111827; 
-    border-bottom: 2px solid #E5E7EB; 
-    padding-bottom: 0.5rem; 
-    margin-top: 2rem;
-    margin-bottom: 1.5rem;
-}
-
-:deep(.markdown-body h2) { 
-    font-size: 1.5rem; 
-    color: #4F46E5; 
-    margin-top: 1.8rem; 
-    margin-bottom: 1rem;
-    font-weight: 700;
-}
-
-:deep(.markdown-body h3) { 
-    font-size: 1.25rem; 
-    color: #1F2937; 
-    margin-top: 1.5rem; 
-    margin-bottom: 0.8rem;
-    font-weight: 600;
-}
-
-:deep(.markdown-body ul), :deep(.markdown-body ol) { 
-    padding-left: 1.5rem; 
-    margin-bottom: 1.5rem;
-}
-
-:deep(.markdown-body li) { 
-    margin-bottom: 0.5rem; 
-    position: relative;
-}
-
-:deep(.markdown-body strong) { 
-    color: #4338CA; /* Indigo */
-    font-weight: 700;
-}
-
-:deep(.markdown-body blockquote) {
-    border-left: 4px solid #818CF8;
-    background: #EEF2FF;
-    padding: 1rem 1.5rem;
-    margin: 1.5rem 0;
-    border-radius: 0 8px 8px 0;
-    color: #312E81;
-    font-style: italic;
-}
-
-:deep(.markdown-body p) {
-    margin-bottom: 1.2rem;
-}
+.premium-gate { background: linear-gradient(135deg, #1e1e2e 0%, #312e81 100%); color: white; padding: 3rem; border-radius: 20px; text-align: center; margin-bottom: 2rem; }
+.btn-upgrade { display: inline-block; background: #F59E0B; color: white; padding: 0.8rem 2rem; border-radius: 99px; margin-top: 1.5rem; text-decoration: none; font-weight: bold; }
+.blurred { filter: blur(8px); opacity: 0.6; pointer-events: none; }
+.ai-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+@media (max-width: 900px) { .ai-grid { grid-template-columns: 1fr; } }
+.full-width { background: var(--primary); color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 600; width: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; margin-top: 1rem; }
+.loading-state, .placeholder-result { padding: 4rem; text-align: center; color: var(--text-light); }
+.spinner { width: 40px; height: 40px; border: 3px solid #E2E8F0; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s infinite; margin: 0 auto 1rem; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.result-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
+.result-content { padding: 2rem; line-height: 1.7; color: var(--text-dark); }
+.quiz-interface, .flashcards-interface { padding: 2rem; }
+.quiz-question { margin-bottom: 2rem; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.option-btn { padding: 1rem; border: 2px solid var(--border-color); background: var(--surface); border-radius: 8px; cursor: pointer; text-align: left; }
+.option-btn.selected { border-color: var(--primary); background: #F3E8FF; }
+.option-btn.correct { border-color: #10B981; background: #D1FAE5; }
+.option-btn.wrong { border-color: #EF4444; background: #FEE2E2; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+.flashcard-container { height: 200px; perspective: 1000px; cursor: pointer; }
+.flashcard-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+.flashcard-inner.is-flipped { transform: rotateY(180deg); }
+.flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border: 1px solid var(--border-color); border-radius: 16px; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--surface); box-shadow: var(--shadow-sm); }
+.flashcard-back { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; transform: rotateY(180deg); }
+.mode-select, textarea, .small-input { width: 100%; padding: 0.8rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--surface); color: var(--text-dark); font-family: inherit; }
+textarea { background: var(--bg-color); }
 </style>
