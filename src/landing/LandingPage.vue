@@ -1,5 +1,6 @@
 <script setup>
 import { ArrowRight, BookOpen, Calendar, ShieldCheck } from 'lucide-vue-next';
+import HeroImage from '../assets/hero-image.png';
 </script>
 
 <template>
@@ -22,10 +23,7 @@ import { ArrowRight, BookOpen, Calendar, ShieldCheck } from 'lucide-vue-next';
             <p class="sub-cta">Pas de carte bancaire requise.</p>
         </div>
         <div class="hero-image">
-            <!-- Placeholder for Screenshot -->
-            <div class="mockup">
-                <div class="screen"></div>
-            </div>
+            <img :src="HeroImage" alt="Edunexo Platform" class="hero-img-content" />
         </div>
     </header>
 
@@ -125,19 +123,29 @@ import { ArrowRight, BookOpen, Calendar, ShieldCheck } from 'lucide-vue-next';
 }
 .hero-image {
     flex: 1;
+    display: flex;
+    justify-content: center;
 }
-.mockup {
-    background: #F4F7FC;
-    border-radius: 20px;
-    padding: 20px;
-    height: 400px;
+.hero-img-content {
+    max-width: 100%;
+    height: auto;
+    filter: drop-shadow(0 10px 30px rgba(58, 122, 254, 0.2));
+    animation: float 6s ease-in-out infinite;
 }
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+}
+
 .features {
     display: flex;
     justify-content: center;
     gap: 2rem;
     padding: 4rem 2rem;
     background: #F9FAFB;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
 }
 .feature-item {
     background: white;
@@ -145,23 +153,50 @@ import { ArrowRight, BookOpen, Calendar, ShieldCheck } from 'lucide-vue-next';
     border-radius: 12px;
     width: 300px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+.feature-item:hover {
+    transform: translateY(-5px);
 }
 .feature-icon {
     color: #3A7AFE;
     margin-bottom: 1rem;
 }
-@media (max-width: 768px) {
+
+/* Responsive Design */
+@media (max-width: 900px) {
     .hero {
-        flex-direction: column;
+        flex-direction: column-reverse; /* Image on top on mobile/tablet */
         text-align: center;
-        padding-top: 2rem;
+        padding: 2rem 1rem;
+        gap: 2rem;
     }
+    
     .hero h1 {
         font-size: 2.5rem;
     }
-    .features {
-        flex-direction: column;
-        align-items: center;
+
+    .hero-content {
+        margin-top: 1rem;
+    }
+
+    .lp-nav {
+        padding: 1rem;
+    }
+    
+    .lp-links a {
+        margin-left: 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .feature-item {
+        width: 100%; /* Full width cards on mobile */
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
     }
 }
 </style>
