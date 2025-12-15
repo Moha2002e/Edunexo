@@ -29,7 +29,7 @@ const flippedCards = ref({});
 const history = ref([]);
 const showHistory = ref(false);
 
-const isAdmin = () => auth.currentUser?.email === 'admin@edunexo.com';
+const isAdmin = () => auth.currentUser?.email === 'admin@edunexo.com' || auth.currentUser?.email === 'mohammedelaouali1@gmail.com';
 const hasAccess = () => isPremium.value || isAdmin();
 
 // History Logic
