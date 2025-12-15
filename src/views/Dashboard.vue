@@ -126,7 +126,10 @@ onMounted(() => {
         
         <!-- Tâches du jour -->
         <div class="card">
-          <h2><CheckCircle size="20" style="margin-right:8px; vertical-align:text-bottom; color:var(--secondary);"/> Planning du jour</h2>
+          <div class="card-header">
+             <h2><CheckCircle size="20" style="margin-right:8px; vertical-align:text-bottom; color:var(--secondary);"/> Planning</h2>
+             <router-link to="/planning" class="link-btn">Gérer</router-link>
+          </div>
           
           <div v-if="todaysTasks.length === 0" class="empty-box" style="padding: 1.5rem;">
             <Clock class="empty-icon" size="32" />
@@ -147,7 +150,10 @@ onMounted(() => {
 
         <!-- Prochaines dates clés -->
         <div class="card">
-          <h2><AlertCircle size="20" style="margin-right:8px; vertical-align:text-bottom; color:#f39c12;"/> Prochaines échéances</h2>
+          <div class="card-header">
+            <h2><AlertCircle size="20" style="margin-right:8px; vertical-align:text-bottom; color:#f39c12;"/> Échéances</h2>
+            <router-link to="/planning" class="link-btn">Voir tout</router-link>
+          </div>
           
           <div v-if="deadlines.length === 0" class="empty-box" style="padding: 1.5rem;">
             <Calendar class="empty-icon" size="32" />

@@ -101,8 +101,9 @@ const showNavbar = computed(() => {
   color: var(--text-dark); /* Solid slate color */
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1.5rem; /* Increased spacing for logo */
   letter-spacing: -0.03em;
+  margin-right: 2rem; /* Add specific margin to separate from links/button */
 }
 .nav-links {
   display: flex;

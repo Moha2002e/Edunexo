@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { BookOpen, User, PlusCircle, Trash2, GraduationCap, MinusCircle } from 'lucide-vue-next';
+import { BookOpen, User, PlusCircle, Trash2, GraduationCap, MinusCircle, Edit2, Save, X } from 'lucide-vue-next';
 import { db, auth } from '../firebase/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query } from 'firebase/firestore'; 
 
@@ -11,6 +11,7 @@ const newCourse = ref({
   teacher: '' 
 });
 const isLoading = ref(true);
+const editingCourse = ref(null); // Course currently being edited
 
 // Helper to get collection ref for current user
 const getCoursesCollection = () => {
@@ -60,6 +61,43 @@ const addCourse = async () => {
     }
   }
 };
+
+const openEditModal = (course) => {
+    // Create a copy to avoid reactive mess until saved
+    editingCourse.value = { ...course };
+};
+
+const closeEditModal = () => {
+    editingCourse.value = null;
+};
+
+const saveEdit = async () => {
+    if(!editingCourse.value) return;
+    
+    const colRef = getCoursesCollection();
+    if(colRef) {
+        try {
+            const updates = {
+                name: editingCourse.value.name,
+                totalChapters: parseInt(editingCourse.value.totalChapters),
+                teacher: editingCourse.value.teacher
+            };
+            
+            await updateDoc(doc(colRef, editingCourse.value.id), updates);
+            
+            // Update local state
+            const index = courses.value.findIndex(c => c.id === editingCourse.value.id);
+            if(index !== -1) {
+                courses.value[index] = { ...courses.value[index], ...updates };
+            }
+            
+            closeEditModal();
+        } catch (e) {
+            console.error("Error updating course:", e);
+            alert("Erreur lors de la mise à jour.");
+        }
+    }
+}
 
 const updateProgress = async (course, amount) => {
   const newVal = course.completedChapters + amount;
@@ -164,9 +202,14 @@ onMounted(() => {
                   <h3>{{ course.name }}</h3>
                   <p v-if="course.teacher" class="prof">Prof. {{ course.teacher }}</p>
                 </div>
-                <button @click="deleteCourse(course.id)" class="delete-btn" title="Supprimer">
-                  <Trash2 size="18" />
-                </button>
+                <div class="card-actions">
+                    <button @click="openEditModal(course)" class="icon-btn edit" title="Modifier">
+                        <Edit2 size="18" />
+                    </button>
+                    <button @click="deleteCourse(course.id)" class="icon-btn delete" title="Supprimer">
+                        <Trash2 size="18" />
+                    </button>
+                </div>
               </div>
               
               <div class="stats-row">
@@ -198,6 +241,31 @@ onMounted(() => {
             </div>
         </div>
       </div>
+    </div>
+
+    <!-- Edit Modal Overlay -->
+    <div v-if="editingCourse" class="modal-overlay" @click.self="closeEditModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Modifier le cours</h3>
+                <button @click="closeEditModal" class="close-btn"><X size="20" /></button>
+            </div>
+            <form @submit.prevent="saveEdit">
+                <label>Nom du cours</label>
+                <input v-model="editingCourse.name" required />
+                
+                <label>Nombre total de chapitres</label>
+                <input type="number" v-model="editingCourse.totalChapters" min="1" required />
+                
+                <label>Professeur</label>
+                <input v-model="editingCourse.teacher" />
+
+                <div class="modal-actions">
+                    <button type="button" @click="closeEditModal" class="btn secondary">Annuler</button>
+                    <button type="submit" class="btn primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
     </div>
   </div>
 </template>
@@ -266,17 +334,25 @@ onMounted(() => {
   color: var(--text-light);
   font-size: 0.9rem;
 }
-.delete-btn {
+
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.icon-btn {
   background: transparent;
-  color: #CBD5E1;
   padding: 0.5rem;
   border-radius: 8px;
   transition: all 0.2s;
+  border: none;
+  cursor: pointer;
 }
-.delete-btn:hover {
-  color: #EF4444;
-  background: #FEF2F2;
-}
+.icon-btn.delete { color: #CBD5E1; }
+.icon-btn.delete:hover { color: #EF4444; background: #FEF2F2; }
+.icon-btn.edit { color: #CBD5E1; }
+.icon-btn.edit:hover { color: var(--primary); background: #EFF6FF; }
+
 
 .stats-row {
   display: flex;
@@ -365,4 +441,55 @@ onMounted(() => {
     .grid-2 { grid-template-columns: 1fr; }
     .add-card { position: static; }
 }
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.modal-header h3 { font-size: 1.3rem; margin: 0; }
+.close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    flex: 1;
+}
+.btn.primary { background: var(--primary); color: white; }
+.btn.secondary { background: #F1F5F9; color: var(--text-dark); }
 </style>
