@@ -1,9 +1,11 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { Sparkles, Copy, Check, BookOpen, Send, FileText, BrainCircuit, HelpCircle, Lock, Calendar, PlayCircle, RefreshCw, Repeat } from 'lucide-vue-next';
+import { Sparkles, Copy, Check, BookOpen, Send, FileText, BrainCircuit, HelpCircle, Lock, Calendar, PlayCircle, RefreshCw, Repeat, Download } from 'lucide-vue-next';
 import { usePremium } from '../firebase/usePremium';
 import { useAiAssistant } from '../composables/useAiAssistant';
 import { auth } from '../firebase/firebase';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 const { isPremium, isLoading: isPremiumLoading } = usePremium();
 const { generatedContent, quizData, flashcardData, planningData, isLoading, generateAiResponse } = useAiAssistant(
@@ -45,6 +47,22 @@ const generate = () => {
         { questionCount: questionCount.value }
     );
 };
+
+const downloadPDF = () => {
+    const element = document.getElementById('ai-result-content');
+    if (!element) return;
+    
+    const opt = {
+      margin:       1,
+      filename:     `Edunexo_${selectedMode.value}_${new Date().toISOString().slice(0,10)}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save();
+};
+
 
 /**
  * UI HELPERS
@@ -172,9 +190,12 @@ const copyToClipboard = async () => {
         <div v-if="generatedContent" class="result-text-wrappeer">
              <div class="result-header">
                 <h3>Résultat</h3>
-                <button @click="copyToClipboard" class="icon-btn" title="Copier"><Copy size="16"/></button>
+                <div class="header-actions">
+                    <button @click="downloadPDF" class="icon-btn" title="Télécharger PDF"><Download size="16"/></button>
+                    <button @click="copyToClipboard" class="icon-btn" title="Copier"><Copy size="16"/></button>
+                </div>
             </div>
-            <div class="result-content markdown-body" v-html="generatedContent"></div>
+            <div id="ai-result-content" class="result-content markdown-body" v-html="generatedContent"></div>
         </div>
 
         <!-- INTERACTIVE QUIZ RESULT -->
@@ -289,6 +310,7 @@ textarea:focus { border-color: #A855F7; background: white; box-shadow: 0 0 0 4px
 .spinner { width: 40px; height: 40px; border: 3px solid #F3E8FF; border-top: 3px solid #9333EA; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem; }
 @keyframes spin { 0% {transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
 .result-header { background: #F9FAFB; padding: 1rem 1.5rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; }
+.header-actions { display: flex; gap: 0.5rem; }
 .result-content { padding: 2rem; line-height: 1.7; color: #374151; }
 .quiz-interface, .planning-interface, .flashcards-interface { padding: 2rem; }
 .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #F3F4F6; padding-bottom: 1rem; }
