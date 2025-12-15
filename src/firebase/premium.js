@@ -14,8 +14,12 @@ export const listenToSubscription = (uid, callback) => {
 
 // This function calls your backend to create a Checkout Session
 export const createCheckoutSession = async (uid, planId) => {
-    // Call your local NodeJS server or Cloud Function
-    const response = await fetch('http://localhost:4242/create-checkout-session', {
+    // Use localhost for dev, but relative path for prod (assuming same domain)
+    const apiUrl = import.meta.env.DEV
+        ? 'http://localhost:4242/create-checkout-session'
+        : '/create-checkout-session';
+
+    const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid, planId })

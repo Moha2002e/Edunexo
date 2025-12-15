@@ -66,7 +66,7 @@ const subscribe = (planId) => {
             </ul>
             <button 
                 v-if="currentPlan !== 'active'"
-                @click="subscribe('price_premium_monthly')" 
+                @click="subscribe('price_1SeeflCXSUVwiHkpIZE3DfvB')" 
                 class="primary full-width"
             >
                 Devenir Premium
