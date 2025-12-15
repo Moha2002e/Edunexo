@@ -1,49 +1,111 @@
 <script setup>
 import { ref } from 'vue';
-import { Sparkles, FileText, HelpCircle, BrainCircuit } from 'lucide-vue-next';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Sparkles, Copy, Check, BookOpen, Send, FileText, BrainCircuit, HelpCircle } from 'lucide-vue-next';
+import Groq from 'groq-sdk';
 import MarkdownIt from 'markdown-it';
 
 const md = new MarkdownIt();
 
-// ⚠️ KEY DIRECTLY INTEGRATED
-const API_KEY = "AIzaSyBkIT1-te57Q_Qw_lkK2eZKckNyUCXztB4"; 
-const genAI = new GoogleGenerativeAI(API_KEY);
+// ⚠️ IMPORTANT : En production, ne mettez jamais de clé API côté client (Vue.js).
+// Idéalement, passez par votre backend (server.js).
+// Pour ce prototype, nous l'utilisons ici avec "dangerouslyAllowBrowser: true".
+const groq = new Groq({
+    apiKey: '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',
+    dangerouslyAllowBrowser: true
+});
 
-// ... (rest of script as before)
-const activeTab = ref('summary'); 
 const inputText = ref('');
-const result = ref('');
+const generatedContent = ref('');
 const isLoading = ref(false);
+const showCopyFeedback = ref(false);
+const activeTab = ref('summary'); // Keep activeTab for UI logic
 
-const generate = async () => {
+const generateSummary = async () => {
+    // ... (function remains same, implicit via context of replace)
   if (!inputText.value) return;
-  
+
   isLoading.value = true;
-  result.value = '';
+  generatedContent.value = '';
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
-    
-    let prompt = "";
-    if (activeTab.value === 'summary') {
-        prompt = `Fais un résumé structuré et clair du texte suivant pour un étudiant. Utilise du Markdown :\n\n${inputText.value}`;
-    } else if (activeTab.value === 'sheet') {
-        prompt = `Génère une fiche de révision efficace à partir de ce cours. Inclus : Définitions clés, Concepts à retenir, et Exemples. Utilise du Markdown bien formaté (h2, gras, listes) :\n\n${inputText.value}`;
-    } else if (activeTab.value === 'quiz') {
-        prompt = `Génère un Quiz QCM de 3 questions basées sur ce texte pour tester mes connaissances. Affiche la question, les choix, et la réponse correcte à la fin. Format Markdown :\n\n${inputText.value}`;
-    }
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "Tu es un expert pédagogique. Ton but est d'aider les étudiants à réviser. Formate tes réponses en Markdown propre (titres, listes à puces)."
+        },
+        {
+          role: "user",
+          content: `Fais-moi un résumé structuré et clair de ce cours, avec les points clés à retenir :\n\n${inputText.value}`
+        }
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.5,
+      max_tokens: 1024,
+    });
 
-    const resultAI = await model.generateContent(prompt);
-    const response = await resultAI.response;
-    const text = response.text();
-    
-    result.value = md.render(text); // Render Markdown
+    const text = chatCompletion.choices[0]?.message?.content || "Aucun contenu généré.";
+    generatedContent.value = md.render(text);
   } catch (error) {
-      console.error(error);
-      result.value = "Une erreur est survenue avec l'IA. Vérifiez votre connexion ou la clé API.";
+    console.error("Erreur Groq:", error);
+    generatedContent.value = "Une erreur est survenue lors de la génération. Vérifiez votre clé API.";
   } finally {
-      isLoading.value = false;
+    isLoading.value = false;
+  }
+};
+
+const generateQuiz = async () => {
+    // ...
+  if (!inputText.value) return;
+
+  isLoading.value = true;
+  generatedContent.value = '';
+
+  try {
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "Tu es un professeur. Crée un quiz de 5 questions (QCM) basées sur le texte fourni. Indique la bonne réponse à la fin."
+        },
+        {
+          role: "user",
+          content: `Génère un quiz pour ce contenu :\n\n${inputText.value}`
+        }
+      ],
+      model: "llama-3.3-70b-versatile",
+    });
+
+    const text = chatCompletion.choices[0]?.message?.content || "Aucun contenu généré.";
+    generatedContent.value = md.render(text);
+  } catch (error) {
+    console.error("Erreur Groq:", error);
+    generatedContent.value = "Erreur lors de la génération.";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Unified generate function to call the specific ones based on activeTab
+const generate = async () => {
+  if (activeTab.value === 'summary') {
+    await generateSummary();
+  } else if (activeTab.value === 'quiz') {
+    await generateQuiz();
+  }
+  // Add other tabs if needed
+};
+
+// Function to copy content (new functionality)
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(generatedContent.value.replace(/<[^>]*>?/gm, '')); // Remove HTML tags for plain text copy
+    showCopyFeedback.value = true;
+    setTimeout(() => {
+      showCopyFeedback.value = false;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy: ', err);
   }
 };
 </script>
@@ -85,14 +147,14 @@ const generate = async () => {
       <!-- Result -->
       <div class="card result-card">
         <h2>Résultat</h2>
-        <div v-if="!result && !isLoading" class="placeholder-result">
+        <div v-if="!generatedContent && !isLoading" class="placeholder-result">
             Le résultat de l'IA s'affichera ici.
         </div>
         <div v-if="isLoading" class="loading-state">
             <div class="spinner"></div>
             Analyse de ton texte...
         </div>
-        <div v-if="result" class="result-content markdown-body" v-html="result"></div>
+        <div v-if="generatedContent" class="result-content markdown-body" v-html="generatedContent"></div>
       </div>
     </div>
   </div>

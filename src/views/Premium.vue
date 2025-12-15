@@ -155,4 +155,11 @@ const subscribe = (planId) => {
     margin-bottom: 2rem;
     font-weight: 600;
 }
+
+@media (max-width: 768px) {
+    .pricing-card.featured {
+        transform: none;
+        box-shadow: 0 4px 20px rgba(58, 122, 254, 0.1);
+    }
+}
 </style>

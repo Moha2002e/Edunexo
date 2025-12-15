@@ -153,4 +153,13 @@ const register = async () => {
     text-decoration: none;
     font-weight: 600;
 }
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
+  .auth-header h1 {
+    font-size: 1.5rem;
+  }
+}
 </style>

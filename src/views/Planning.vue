@@ -322,4 +322,12 @@ onMounted(() => {
 .task-name {
   font-weight: 500;
 }
+
+@media (max-width: 500px) {
+  .task-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
 </style>

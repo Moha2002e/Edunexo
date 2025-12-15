@@ -271,4 +271,12 @@ onMounted(() => {
   flex-direction: column;
   gap: 1.5rem;
 }
+
+@media (max-width: 600px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
 </style>

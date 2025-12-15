@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase/firebase';
 import { Mail, Lock, LogIn } from 'lucide-vue-next';
 
@@ -9,7 +9,9 @@ const router = useRouter();
 const email = ref('');
 const password = ref('');
 const errorMsg = ref('');
+const infoMsg = ref('');
 const isLoading = ref(false);
+const isResetting = ref(false);
 
 const login = async () => {
   errorMsg.value = '';
@@ -25,6 +27,30 @@ const login = async () => {
     isLoading.value = false;
   }
 };
+
+const resetPassword = async () => {
+    errorMsg.value = '';
+    infoMsg.value = '';
+    if(!email.value) {
+        errorMsg.value = "Veuillez entrer votre email.";
+        return;
+    }
+    
+    isLoading.value = true;
+    try {
+        await sendPasswordResetEmail(auth, email.value);
+        infoMsg.value = "Un email de réinitialisation a été envoyé !";
+    } catch (error) {
+        console.error(error);
+        if(error.code === 'auth/user-not-found') {
+             errorMsg.value = "Aucun compte trouvé avec cet email.";
+        } else {
+             errorMsg.value = "Erreur lors de l'envoi de l'email.";
+        }
+    } finally {
+        isLoading.value = false;
+    }
+};
 </script>
 
 <template>
@@ -35,7 +61,7 @@ const login = async () => {
         <p>Connecte-toi pour accéder à ton planning</p>
       </div>
 
-      <form @submit.prevent="login">
+      <form v-if="!isResetting" @submit.prevent="login">
         <label>Email</label>
         <div class="input-with-icon">
             <Mail size="18" class="input-icon" />
@@ -48,6 +74,10 @@ const login = async () => {
             <input type="password" v-model="password" placeholder="••••••••" required />
         </div>
 
+        <div class="forgot-password">
+            <a href="#" @click.prevent="isResetting = true">Mot de passe oublié ?</a>
+        </div>
+
         <div v-if="errorMsg" class="error-box">
             {{ errorMsg }}
         </div>
@@ -57,7 +87,34 @@ const login = async () => {
         </button>
       </form>
 
-      <div class="auth-footer">
+      <form v-else @submit.prevent="resetPassword">
+        <p style="text-align:center; color:var(--text-light); margin-bottom:1.5rem;">
+            Entrez votre email pour recevoir un lien de réinitialisation.
+        </p>
+        
+        <label>Email</label>
+        <div class="input-with-icon">
+            <Mail size="18" class="input-icon" />
+            <input type="email" v-model="email" placeholder="etudiant@ecole.com" required />
+        </div>
+
+        <div v-if="infoMsg" class="success-box">
+            {{ infoMsg }}
+        </div>
+        <div v-if="errorMsg" class="error-box">
+            {{ errorMsg }}
+        </div>
+
+        <button type="submit" class="primary full-width" :disabled="isLoading">
+            {{ isLoading ? 'Envoi...' : 'Envoyer le lien' }}
+        </button>
+        
+        <button type="button" class="link-btn full-width" @click="isResetting = false" style="margin-top:0.5rem;">
+            Retour à la connexion
+        </button>
+      </form>
+
+      <div class="auth-footer" v-if="!isResetting">
         Pas encore de compte ? <router-link to="/register">Créer un compte</router-link>
       </div>
     </div>
@@ -120,7 +177,40 @@ const login = async () => {
     border-radius: 8px;
     font-size: 0.9rem;
     margin-bottom: 1rem;
+    margin-bottom: 1rem;
     text-align: center;
+}
+.success-box {
+    background: #d4edda;
+    color: #155724;
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+.forgot-password {
+    text-align: right;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+.forgot-password a {
+    color: var(--text-light);
+    text-decoration: none;
+}
+.forgot-password a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    text-decoration: underline;
+}
+.link-btn:hover {
+    color: var(--text-dark);
 }
 .auth-footer {
     text-align: center;
@@ -132,5 +222,14 @@ const login = async () => {
     color: var(--primary);
     text-decoration: none;
     font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
+  .auth-header h1 {
+    font-size: 1.5rem;
+  }
 }
 </style>
