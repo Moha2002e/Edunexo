@@ -1,5 +1,5 @@
 <script setup>
-import { LayoutDashboard, BookOpen, Calendar, Menu, X, LogOut, Sparkles, Crown } from 'lucide-vue-next';
+import { LayoutDashboard, BookOpen, Calendar, Menu, X, LogOut, Sparkles, Crown, Shield } from 'lucide-vue-next';
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { auth } from '../firebase/firebase'; 
@@ -62,8 +62,13 @@ const showNavbar = computed(() => {
         <router-link to="/ai-assistant" @click="isMenuOpen = false" class="ai-link">
           <Sparkles size="18" /> <span class="link-text">Assistant IA</span>
         </router-link>
+        
         <router-link to="/premium" @click="isMenuOpen = false" class="premium-link">
           <Crown size="18" /> <span class="link-text">Premium</span>
+        </router-link>
+
+        <router-link to="/admin" v-if="user?.email === 'mohammedelaouali1@gmail.com'" @click="isMenuOpen = false" class="admin-link">
+          <Shield size="18" /> <span class="link-text">Admin</span>
         </router-link>
         
         <div class="divider mobile-only"></div>
@@ -137,9 +142,22 @@ const showNavbar = computed(() => {
     color: #9333ea !important; /* Proper Purple */
     background: #faf5ff !important;
 }
-.premium-link.router-link-active {
     color: #ca8a04 !important; /* Darker Gold */
     background: #fefce8 !important;
+}
+.admin-link.router-link-active, .admin-link {
+    color: #dc2626 !important; /* Red */
+    border: 1px solid #fee2e2;
+}
+.admin-badge {
+    background: #dc2626;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+    font-weight: 800;
 }
 
 .logout-btn {
