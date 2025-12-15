@@ -514,19 +514,38 @@ import HeroImage from '../assets/hero-image.png';
 
 /* Responsive */
 @media (max-width: 900px) {
+    .lp-nav { padding: 1rem; }
     .hero {
         flex-direction: column-reverse;
         text-align: center;
         padding: 3rem 1rem;
+        gap: 3rem;
     }
     .hero h1 { font-size: 2.5rem; }
+    .hero-content { margin: 0 auto; }
     .cta-group { justify-content: center; flex-direction: column; gap: 1rem;}
     .checklist { justify-content: center; flex-wrap: wrap; }
-    .steps-container { flex-direction: column; gap: 2rem; }
-    .step-line { display: none; }
-    .lp-nav .nav-link { display: none; } /* Hide links on mobile, keep CTA */
     
-    .card-1 { left: 0; }
-    .card-2 { right: 0; }
+    .steps-container { flex-direction: column; gap: 2rem; align-items: center; } /* Center steps */
+    .step-line { display: none; }
+    .step { width: 100%; } /* Ensure full width */
+
+    .lp-nav .nav-link { display: none; } /* Keeping simple for now */
+    
+    .card-1 { left: 0; top: 0; }
+    .card-2 { right: 0; bottom: 0; }
+    
+    .footer-content { flex-direction: column; gap: 2rem; text-align: center; }
+    .footer-links { flex-direction: column; gap: 1rem; }
+}
+
+@media (max-width: 600px) {
+    .hero h1 { font-size: 2rem; }
+    .hero-bg-glow { width: 100%; left: 0; }
+    .feature-card { padding: 1.5rem; }
+    .features-grid { grid-template-columns: 1fr; } /* Force single column on phones */
+    
+    .badge-new { font-size: 0.75rem; }
+    .trust-pill { justify-content: center; }
 }
 </style>
