@@ -28,10 +28,10 @@ const register = async () => {
     // Send Verification Email
     await sendEmailVerification(userCredential.user);
     
-    // Sign out immediately so they have to login again after verifying (cleaner flow)
-    // Or keep them logged in but blocked. 
-    // Best practice: Keep them logged in but show "Pending" screen.
-    // For simplicity here, we show the success message.
+    // Sign out immediately so they have to login again after verifying
+    await signOut(auth);
+    
+    // Show success message
     verificationSent.value = true;
     
   } catch (error) {
