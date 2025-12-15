@@ -1,8 +1,7 @@
-<script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth'; // Import signOut
-import { auth } from '../firebase/firebase';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut, signInWithPopup } from 'firebase/auth'; // Import signOut
+import { auth, googleProvider } from '../firebase/firebase';
 import { User, Mail, Lock, ArrowRight, CheckCircle, Send } from 'lucide-vue-next'; // New Icons
 
 const router = useRouter();
@@ -49,6 +48,20 @@ const register = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const registerWithGoogle = async () => {
+    isLoading.value = true;
+    errorMsg.value = '';
+    try {
+        await signInWithPopup(auth, googleProvider);
+        router.push('/');
+    } catch (error) {
+        console.error(error);
+        errorMsg.value = "Erreur d'inscription Google.";
+    } finally {
+        isLoading.value = false;
+    }
 };
 </script>
 
@@ -102,6 +115,22 @@ const register = async () => {
 
             <button type="submit" class="primary full-width" :disabled="isLoading">
                 {{ isLoading ? 'Envoi en cours...' : 'S\'inscrire gratuitement' }} <ArrowRight size="18" style="margin-left:5px; vertical-align:text-bottom;" />
+            </button>
+
+            <div class="divider">
+                <span>OU</span>
+            </div>
+
+            <button type="button" class="google-btn full-width" @click="registerWithGoogle" :disabled="isLoading">
+                <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18">
+                    <g transform="matrix(1, 0, 0, 1, 27.009001, -39.23856)">
+                        <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
+                        <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
+                        <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.769 -21.864 51.959 -21.864 51.129 C -21.864 50.299 -21.734 49.489 -21.484 48.729 L -21.484 45.639 L -25.464 45.639 C -26.284 47.269 -26.754 49.129 -26.754 51.129 C -26.754 53.129 -26.284 54.989 -25.464 56.619 L -21.484 53.529 Z" />
+                        <path fill="#EA4335" d="M -14.754 43.769 C -12.984 43.769 -11.404 44.369 -10.154 45.579 L -6.904 42.329 C -8.964 40.409 -11.664 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.769 -14.754 43.769 Z" />
+                    </g>
+                </svg>
+                S'inscrire avec Google
             </button>
         </form>
 
@@ -256,5 +285,41 @@ const register = async () => {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+.divider span {
+    padding: 0 10px;
+}
+
+.google-btn {
+    background: white;
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    cursor: pointer;
+    border-radius: 12px;
+}
+.google-btn:hover {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
 }
 </style>
