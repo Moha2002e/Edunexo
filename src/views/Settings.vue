@@ -39,4 +39,10 @@ const updateName = async () => {
 
 <style scoped>
 .msg { color: green; margin-top: 10px; }
+
+@media (max-width: 600px) {
+  .card {
+     padding: 1.5rem;
+  }
+}
 </style>

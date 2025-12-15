@@ -59,6 +59,16 @@ h1 {
   line-height: 1.2;
 }
 
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+}
+
 h2 {
   font-size: 1.5rem;
   margin-bottom: 1rem;

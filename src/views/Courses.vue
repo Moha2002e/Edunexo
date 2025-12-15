@@ -1,69 +1,34 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { BookOpen, User, PlusCircle, Trash2, GraduationCap, MinusCircle, Edit2, Save, X } from 'lucide-vue-next';
-import { db, auth } from '../firebase/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query } from 'firebase/firestore'; 
+import { BookOpen, User, PlusCircle, Trash2, GraduationCap, MinusCircle, Edit2, X } from 'lucide-vue-next';
+import { auth } from '../firebase/firebase';
+import { useCourses } from '../composables/useCourses';
 
-const courses = ref([]);
+const { 
+    courses, 
+    isLoading, 
+    loadCourses, 
+    addCourseEntry, 
+    updateCourseProgress, 
+    updateCourseDetails, 
+    removeCourse 
+} = useCourses();
+
 const newCourse = ref({ 
   name: '', 
   totalChapters: 10, 
   teacher: '' 
 });
-const isLoading = ref(true);
-const editingCourse = ref(null); // Course currently being edited
+const editingCourse = ref(null); 
 
-// Helper to get collection ref for current user
-const getCoursesCollection = () => {
-    const user = auth.currentUser;
-    if (!user) return null;
-    return collection(db, 'users', user.uid, 'courses');
-};
-
-const loadCourses = async () => {
-  const colRef = getCoursesCollection();
-  if (!colRef) return;
-  
-  isLoading.value = true;
-  try {
-      const q = query(colRef);
-      const snapshot = await getDocs(q);
-      courses.value = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-      }));
-  } catch (e) {
-      console.error("Error loading courses:", e);
-  } finally {
-      isLoading.value = false;
-  }
-};
-
-const addCourse = async () => {
+const handleAddCourse = async () => {
   if (newCourse.value.name) {
-    const colRef = getCoursesCollection();
-    if (!colRef) return;
-
-    const courseData = {
-      name: newCourse.value.name,
-      totalChapters: parseInt(newCourse.value.totalChapters),
-      completedChapters: 0,
-      teacher: newCourse.value.teacher || null,
-      createdAt: new Date()
-    };
-    
-    try {
-        const docRef = await addDoc(colRef, courseData);
-        courses.value.push({ id: docRef.id, ...courseData });
-        newCourse.value = { name: '', totalChapters: 10, teacher: '' };
-    } catch (e) {
-        console.error("Error adding course:", e);
-    }
+      await addCourseEntry(newCourse.value.name, newCourse.value.totalChapters, newCourse.value.teacher);
+      newCourse.value = { name: '', totalChapters: 10, teacher: '' };
   }
 };
 
 const openEditModal = (course) => {
-    // Create a copy to avoid reactive mess until saved
     editingCourse.value = { ...course };
 };
 
@@ -74,65 +39,13 @@ const closeEditModal = () => {
 const saveEdit = async () => {
     if(!editingCourse.value) return;
     
-    const colRef = getCoursesCollection();
-    if(colRef) {
-        try {
-            const updates = {
-                name: editingCourse.value.name,
-                totalChapters: parseInt(editingCourse.value.totalChapters),
-                teacher: editingCourse.value.teacher
-            };
-            
-            await updateDoc(doc(colRef, editingCourse.value.id), updates);
-            
-            // Update local state
-            const index = courses.value.findIndex(c => c.id === editingCourse.value.id);
-            if(index !== -1) {
-                courses.value[index] = { ...courses.value[index], ...updates };
-            }
-            
-            closeEditModal();
-        } catch (e) {
-            console.error("Error updating course:", e);
-            alert("Erreur lors de la mise à jour.");
-        }
-    }
-}
-
-const updateProgress = async (course, amount) => {
-  const newVal = course.completedChapters + amount;
-  if (newVal >= 0 && newVal <= course.totalChapters) {
-    // Optimistic
-    const oldVal = course.completedChapters;
-    course.completedChapters = newVal;
-
-    const colRef = getCoursesCollection();
-    if(colRef) {
-        try {
-            await updateDoc(doc(colRef, course.id), { completedChapters: newVal });
-        } catch (e) {
-            console.error("Error updating progress:", e);
-            course.completedChapters = oldVal;
-        }
-    }
-  }
-};
-
-const deleteCourse = async (id) => {
-  if(confirm('Supprimer ce cours ?')) {
-    const oldList = [...courses.value];
-    courses.value = courses.value.filter(c => c.id !== id);
-
-    const colRef = getCoursesCollection();
-    if(colRef) {
-        try {
-            await deleteDoc(doc(colRef, id));
-        } catch (e) {
-             console.error("Error deleting course:", e);
-             courses.value = oldList;
-        }
-    }
-  }
+    await updateCourseDetails(editingCourse.value.id, {
+        name: editingCourse.value.name,
+        totalChapters: parseInt(editingCourse.value.totalChapters),
+        teacher: editingCourse.value.teacher
+    });
+    
+    closeEditModal();
 };
 
 onMounted(() => {
@@ -158,7 +71,7 @@ onMounted(() => {
       <!-- Formulaire d'ajout -->
       <div class="card h-fit add-card">
         <h2>Ajouter un cours</h2>
-        <form @submit.prevent="addCourse">
+        <form @submit.prevent="handleAddCourse">
           <label>Matière</label>
           <div class="input-with-icon">
             <BookOpen size="18" class="input-icon" />
@@ -206,7 +119,7 @@ onMounted(() => {
                     <button @click="openEditModal(course)" class="icon-btn edit" title="Modifier">
                         <Edit2 size="18" />
                     </button>
-                    <button @click="deleteCourse(course.id)" class="icon-btn delete" title="Supprimer">
+                    <button @click="removeCourse(course.id)" class="icon-btn delete" title="Supprimer">
                         <Trash2 size="18" />
                     </button>
                 </div>
@@ -231,10 +144,10 @@ onMounted(() => {
               </div>
               
               <div class="actions-row">
-                 <button @click="updateProgress(course, -1)" class="action-btn outline" :disabled="course.completedChapters <= 0">
+                 <button @click="updateCourseProgress(course, -1)" class="action-btn outline" :disabled="course.completedChapters <= 0">
                    <MinusCircle size="20" />
                  </button>
-                 <button @click="updateProgress(course, 1)" class="action-btn primary" :disabled="course.completedChapters >= course.totalChapters">
+                 <button @click="updateCourseProgress(course, 1)" class="action-btn primary" :disabled="course.completedChapters >= course.totalChapters">
                    <PlusCircle size="20" />
                  </button>
               </div>
@@ -271,6 +184,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Reusing shared styles - keeping them here as View-specific */
 .header-section {
     text-align: center;
     margin-bottom: 2.5rem;
@@ -468,6 +382,13 @@ onMounted(() => {
 @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+}
+@media (max-width: 600px) {
+    .modal-content {
+        width: 90%;
+        margin: 1rem;
+        padding: 1.5rem;
+    }
 }
 .modal-header {
     display: flex;
