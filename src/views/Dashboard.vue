@@ -91,6 +91,29 @@ onMounted(() => {
       </div>
     </div>
     
+    <!-- Stats Row -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">🔥 Série de révision</span>
+            <span class="stat-value">3 jours</span>
+            <small style="color:var(--accent)">+1 hier</small>
+        </div>
+        <div class="stat-card">
+             <span class="stat-label">📚 Cours suivis</span>
+            <span class="stat-value">{{ courses.length }}</span>
+            <small style="color:var(--text-light)">Matières actives</small>
+        </div>
+        <div class="stat-card">
+             <span class="stat-label">✅ Tâches complétées</span>
+            <span class="stat-value">12</span>
+            <small style="color:var(--secondary)">Cette semaine</small>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #4F46E5, #818CF8); color: white; border:none;">
+            <span class="stat-label" style="color:rgba(255,255,255,0.8)">💡 Pensée du jour</span>
+            <p style="font-style:italic; margin-top:0.5rem; font-weight:500;">"L'éducation est l'arme la plus puissante pour changer le monde."</p>
+        </div>
+    </div>
+    
     <div v-if="isLoading" style="text-align:center; padding:2rem; color:var(--text-light);">
         Chargement de vos données...
     </div>
