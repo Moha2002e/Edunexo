@@ -110,6 +110,22 @@ onMounted(() => {
     }, 5000); // Change toutes les 5 secondes
 });
 
+const isEmailVerified = () => {
+    return auth.currentUser?.emailVerified;
+};
+
+const sendVerification = async () => {
+    if (auth.currentUser && !auth.currentUser.emailVerified) {
+        try {
+            await auth.currentUser.sendEmailVerification();
+            alert('Email de vérification envoyé !');
+        } catch (e) {
+            console.error(e);
+            alert('Erreur lors de l\'envoi.');
+        }
+    }
+};
+
 onUnmounted(() => {
     if (quoteInterval) clearInterval(quoteInterval);
 });
@@ -122,6 +138,13 @@ onUnmounted(() => {
         <h1>Bonjour, {{ userFirstName || 'Étudiant' }} 👋</h1>
         <p class="date-display">{{ new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) }}</p>
       </div>
+    </div>
+    
+    <!-- Verification Alert -->
+    <div v-if="!isLoading && !isEmailVerified()" class="verify-alert">
+        <AlertCircle size="20" />
+        <span>Ton email n'est pas vérifié.</span>
+        <button @click="sendVerification" class="resend-link">Renvoyer le lien</button>
     </div>
     
     <!-- Stats Row -->
@@ -412,5 +435,27 @@ onUnmounted(() => {
     align-items: flex-start;
     gap: 0.5rem;
   }
+}
+
+.verify-alert {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    color: #B91C1C;
+    padding: 0.8rem 1.2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+.resend-link {
+    background: none;
+    border: none;
+    text-decoration: underline;
+    color: #B91C1C;
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: auto;
 }
 </style>

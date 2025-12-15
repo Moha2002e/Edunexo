@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth'; // Import signOut
 import { auth } from '../firebase/firebase';
-import { User, Mail, Lock, ArrowRight } from 'lucide-vue-next';
+import { User, Mail, Lock, ArrowRight, CheckCircle, Send } from 'lucide-vue-next'; // New Icons
 
 const router = useRouter();
 const name = ref('');
@@ -11,6 +11,7 @@ const email = ref('');
 const password = ref('');
 const errorMsg = ref('');
 const isLoading = ref(false);
+const verificationSent = ref(false); // New state
 
 const register = async () => {
   errorMsg.value = '';
@@ -18,11 +19,21 @@ const register = async () => {
   
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value);
+    
     // Add Display Name
     await updateProfile(userCredential.user, {
         displayName: name.value
     });
-    router.push('/');
+
+    // Send Verification Email
+    await sendEmailVerification(userCredential.user);
+    
+    // Sign out immediately so they have to login again after verifying (cleaner flow)
+    // Or keep them logged in but blocked. 
+    // Best practice: Keep them logged in but show "Pending" screen.
+    // For simplicity here, we show the success message.
+    verificationSent.value = true;
+    
   } catch (error) {
     console.error(error);
     switch(error.code) {
@@ -44,42 +55,61 @@ const register = async () => {
 <template>
   <div class="auth-container">
     <div class="auth-card">
-      <div class="auth-header">
-        <h1>Créer un compte</h1>
-        <p>Rejoins Edunexo pour booster tes révisions</p>
+      
+      <!-- Verification Success Mode -->
+      <div v-if="verificationSent" class="auth-success">
+          <div class="success-icon">
+              <CheckCircle size="48" color="#10B981" />
+          </div>
+          <h1>Vérifie ta boîte mail !</h1>
+          <p>Un lien de confirmation vient d'être envoyé à <strong>{{ email }}</strong>.</p>
+          <p class="sub-text">Clique sur ce lien pour activer ton compte, puis connecte-toi.</p>
+          
+          <router-link to="/login" class="primary full-width btn-login">
+              Retour à la connexion
+          </router-link>
       </div>
 
-      <form @submit.prevent="register">
-        <label>Ton Prénom</label>
-        <div class="input-with-icon">
-            <User size="18" class="input-icon" />
-            <input type="text" v-model="name" placeholder="Ex: Thomas" required />
+      <!-- Registration Form Mode -->
+      <div v-else>
+        <div class="auth-header">
+            <h1>Créer un compte</h1>
+            <p>Rejoins Edunexo pour booster tes révisions</p>
         </div>
 
-        <label>Email</label>
-        <div class="input-with-icon">
-            <Mail size="18" class="input-icon" />
-            <input type="email" v-model="email" placeholder="etudiant@ecole.com" required />
-        </div>
-        
-        <label>Mot de passe</label>
-        <div class="input-with-icon">
-            <Lock size="18" class="input-icon" />
-            <input type="password" v-model="password" placeholder="••••••••" required />
-        </div>
+        <form @submit.prevent="register">
+            <label>Ton Prénom</label>
+            <div class="input-with-icon">
+                <User size="18" class="input-icon" />
+                <input type="text" v-model="name" placeholder="Ex: Thomas" required />
+            </div>
 
-        <div v-if="errorMsg" class="error-box">
-            {{ errorMsg }}
+            <label>Email</label>
+            <div class="input-with-icon">
+                <Mail size="18" class="input-icon" />
+                <input type="email" v-model="email" placeholder="etudiant@ecole.com" required />
+            </div>
+            
+            <label>Mot de passe</label>
+            <div class="input-with-icon">
+                <Lock size="18" class="input-icon" />
+                <input type="password" v-model="password" placeholder="••••••••" required />
+            </div>
+
+            <div v-if="errorMsg" class="error-box">
+                {{ errorMsg }}
+            </div>
+
+            <button type="submit" class="primary full-width" :disabled="isLoading">
+                {{ isLoading ? 'Envoi en cours...' : 'S\'inscrire gratuitement' }} <ArrowRight size="18" style="margin-left:5px; vertical-align:text-bottom;" />
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Déjà un compte ? <router-link to="/login">Se connecter</router-link>
         </div>
-
-        <button type="submit" class="primary full-width" :disabled="isLoading">
-            {{ isLoading ? 'Création...' : 'S\'inscrire gratuitement' }} <ArrowRight size="18" style="margin-left:5px; vertical-align:text-bottom;" />
-        </button>
-      </form>
-
-      <div class="auth-footer">
-        Déjà un compte ? <router-link to="/login">Se connecter</router-link>
       </div>
+
     </div>
   </div>
 </template>
@@ -201,5 +231,30 @@ const register = async () => {
   .auth-header h1 {
     font-size: 1.75rem;
   }
+}
+
+.auth-success {
+    text-align: center;
+    padding: 1rem;
+    animation: fadeIn 0.5s ease;
+}
+.success-icon {
+    background: #D1FAE5;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem auto;
+}
+.auth-success h1 { font-size: 1.8rem; margin-bottom: 1rem; }
+.sub-text { color: var(--text-light); margin-bottom: 2rem; }
+.btn-login { text-decoration: none; margin-top: 1rem; background: var(--text-dark); }
+.btn-login:hover { background: black; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
