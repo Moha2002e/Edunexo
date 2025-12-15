@@ -64,7 +64,7 @@ const generateQuiz = async () => {
       messages: [
         {
           role: "system",
-          content: "Tu es un professeur. Crée un quiz de 5 questions (QCM) basées sur le texte fourni. Indique la bonne réponse à la fin."
+          content: "Tu es un professeur. Crée un quiz de 20 questions (QCM) basées sur le texte fourni. Indique la bonne réponse à la fin."
         },
         {
           role: "user",
