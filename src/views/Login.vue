@@ -122,6 +122,7 @@ const resetPassword = async () => {
 </template>
 
 <style scoped>
+/* Modern Auth Styles */
 .auth-container {
   display: flex;
   justify-content: center;
@@ -129,107 +130,158 @@ const resetPassword = async () => {
   min-height: 80vh;
   padding: 1rem;
 }
+
 .auth-card {
   background: white;
-  padding: 2.5rem;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  padding: 3rem;
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg); /* Deeper shadow for pop */
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  border: 1px solid var(--border-color);
 }
+
 .auth-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
+
 .auth-header h1 {
-  margin-bottom: 0.5rem;
-  font-size: 1.8rem;
+  margin-bottom: 0.75rem;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text-dark);
 }
+
 .auth-header p {
   color: var(--text-light);
   margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
 }
+
 .input-with-icon {
   position: relative;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.25rem;
 }
+
 .input-icon {
   position: absolute;
-  left: 14px;
-  top: 13px;
-  color: #95a5a6;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8; /* Slate 400 */
+  transition: color 0.2s;
 }
+
+.input-with-icon input:focus + .input-icon,
+.input-with-icon:focus-within .input-icon {
+    color: var(--primary);
+}
+
 .input-with-icon input {
-  padding-left: 42px;
+  padding-left: 48px; /* More space for icon */
   margin-bottom: 0; 
+  height: 52px; /* Taller inputs */
+  border-radius: 12px;
 }
+
 .full-width {
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  height: 52px;
+  font-size: 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
 .error-box {
-    background: #fff5f5;
-    color: #e74c3c;
-    padding: 0.8rem;
-    border-radius: 8px;
+    background: #FEF2F2;
+    color: #DC2626;
+    padding: 1rem;
+    border-radius: 12px;
     font-size: 0.9rem;
-    margin-bottom: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     text-align: center;
+    border: 1px solid #FECACA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
+
 .success-box {
-    background: #d4edda;
-    color: #155724;
-    padding: 0.8rem;
-    border-radius: 8px;
+    background: #ECFDF5;
+    color: #059669;
+    padding: 1rem;
+    border-radius: 12px;
     font-size: 0.9rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     text-align: center;
+    border: 1px solid #A7F3D0;
 }
+
 .forgot-password {
     text-align: right;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     font-size: 0.9rem;
 }
+
 .forgot-password a {
     color: var(--text-light);
     text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
 }
+
 .forgot-password a:hover {
     color: var(--primary);
-    text-decoration: underline;
 }
+
 .link-btn {
     background: none;
     border: none;
     color: var(--text-light);
     cursor: pointer;
-    text-decoration: underline;
+    font-size: 0.9rem;
+    font-weight: 500;
 }
+
 .link-btn:hover {
-    color: var(--text-dark);
+    color: var(--primary);
 }
+
 .auth-footer {
     text-align: center;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     font-size: 0.95rem;
     color: var(--text-light);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
 }
+
 .auth-footer a {
     color: var(--primary);
     text-decoration: none;
     font-weight: 600;
+    margin-left: 4px;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 480px) {
   .auth-card {
     padding: 1.5rem;
+    box-shadow: none; /* Flatter on mobile to reduce clutter */
+    border: none;
+    background: transparent;
   }
   .auth-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
 }
 </style>

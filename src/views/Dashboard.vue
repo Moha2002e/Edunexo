@@ -168,104 +168,145 @@ onMounted(() => {
 
 <style scoped>
 /* Keep existing styles, just ensure empty-box is handled if not in global css yet (fallback) */
+/* Dashboard Styles */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
+
 .date-display {
   color: var(--text-light);
   font-weight: 500;
   text-transform: capitalize;
-  margin-top: 0.2rem;
+  margin-top: 0.25rem;
+  font-size: 1.1rem;
 }
-/* ... existing styles ... */
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
 }
+
 .link-btn {
   color: var(--primary);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 600;
-  background: rgba(58, 122, 254, 0.1);
-  padding: 0.3rem 0.8rem;
-  border-radius: 6px;
+  background: #EFF6FF;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s;
 }
+
+.link-btn:hover {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
 .course-item {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem; /* Space for separation if needed */
 }
+
 .course-details {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.4rem;
-  font-size: 0.95rem;
-  font-weight: 500;
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-dark);
 }
+
 .course-percent {
   color: var(--primary);
+  font-weight: 700;
 }
+
 .progress-bg {
-  background: #EFF6FF;
-  height: 8px;
-  border-radius: 10px;
+  background: #F1F5F9;
+  height: 10px;
+  border-radius: 99px;
   overflow: hidden;
 }
+
 .progress-fill {
   background: linear-gradient(90deg, var(--primary), var(--secondary));
   height: 100%;
+  border-radius: 99px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .task-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .task-item {
   display: flex;
-  align-items: flex-start;
-  gap: 0.8rem;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid #f5f5f5;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s;
+  border-radius: 12px;
 }
+
+.task-item:hover {
+  background: #F8FAFC;
+}
+
 .task-item:last-child {
   border-bottom: none;
 }
+
 .check-icon {
-  color: var(--white);
-  background: var(--secondary);
-  width: 20px;
-  height: 20px;
+  color: var(--secondary);
+  background: #EEF2FF;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   flex-shrink: 0;
-  margin-top: 2px;
 }
+
 .deadline-row {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.8rem 0;
-  border-bottom: 1px dashed #e0e0e0;
+  gap: 1.25rem;
+  padding: 1rem;
+  border-bottom: 1px dashed var(--border-color);
 }
+
 .deadline-row:last-child {
   border-bottom: none;
 }
+
 .deadline-date {
-  font-weight: bold;
+  font-weight: 700;
   color: var(--text-dark);
-  min-width: 60px;
+  min-width: 65px;
+  text-align: center;
+  background: #FEF3C7; /* Soft Amber */
+  color: #D97706;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
 }
+
 .deadline-info {
-  color: var(--text-light);
-  font-size: 0.9rem;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  font-weight: 500;
 }
+
 .right-column {
   display: flex;
   flex-direction: column;
