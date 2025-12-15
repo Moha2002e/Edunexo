@@ -13,11 +13,31 @@ dotenv.config();
 // Configure Stripe with Secret Key from .env
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// Recreate __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = express();
+
+// Serve static files from the 'dist' directory (Vite build)
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Use JSON parser for all non-webhook routes
+app.use((req, res, next) => {
+    if (req.originalUrl === '/webhook') {
+        next();
+    } else {
+        express.json()(req, res, next);
+    }
+});
+
+app.use(cors());
+
+// Create Checkout Route
 app.post('/create-checkout-session', async (req, res) => {
     const { planId, uid } = req.body;
 
-    // In production, get the Price ID from an environment variable or database to avoid frontend tampering
-    // For this MVP, we trust the planId passed or map it here:
+    // In production, you might map the planId to a priceId from .env
     // const priceId = process.env.STRIPE_PRICE_ID; 
 
     try {
