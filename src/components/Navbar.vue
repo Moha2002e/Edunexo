@@ -142,6 +142,7 @@ const showNavbar = computed(() => {
     color: #9333ea !important; /* Proper Purple */
     background: #faf5ff !important;
 }
+.premium-link.router-link-active {
     color: #ca8a04 !important; /* Darker Gold */
     background: #fefce8 !important;
 }
