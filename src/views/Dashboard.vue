@@ -1,14 +1,32 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { BookOpen, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-vue-next';
 import { db, auth } from '../firebase/firebase';
-import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore'; 
+import { collection, getDocs } from 'firebase/firestore'; 
 
 const courses = ref([]);
 const deadlines = ref([]); 
 const todaysTasks = ref([]);
 const userFirstName = ref('');
 const isLoading = ref(true);
+
+// Stats
+const stats = ref({
+    streak: 0,
+    totalTasks: 0,
+    completedTasks: 0
+});
+
+// Quotes
+const quotes = [
+    "L'éducation est l'arme la plus puissante pour changer le monde.",
+    "Ce n'est pas que je suis si intelligent, c'est que je reste plus longtemps avec les problèmes. - Einstein",
+    "L'apprentissage est la seule chose que l'esprit n'épuise jamais. - Da Vinci",
+    "Le succès, c'est tomber sept fois, se relever huit. - Proverbe japonais",
+    "Investir dans le savoir rapporte le meilleur intérêt. - Benjamin Franklin"
+];
+const currentQuoteIndex = ref(0);
+let quoteInterval;
 
 const getLocalToday = () => new Date().toLocaleDateString('sv');
 
@@ -40,17 +58,23 @@ const loadDashboardData = async () => {
             };
         });
 
-        // 2. Load Todays Tasks
-        // Optimized query: get only tasks where day == today
+        // 2. Load Todos & Calculate Stats
         const todayStr = getLocalToday();
         const planningRef = collection(db, 'users', user.uid, 'planning');
-        
-        // Firestore query (requires index potentially, or client side filter if small data)
-        // Let's do client side filter for MVP simplicity to avoid complex compound index setups immediately
         const planningSnap = await getDocs(planningRef);
         const allPlanning = planningSnap.docs.map(d => d.data());
         
         todaysTasks.value = allPlanning.filter(p => p.day === todayStr);
+
+        // Stats Logic
+        stats.value.totalTasks = allPlanning.length;
+        // As 'completed' field is not strictly enforced yet, we use a proxy or check if it exists
+        stats.value.completedTasks = allPlanning.filter(p => p.completed === true).length;
+        
+        // Mock Streak for now (random realistic number or 0)
+        // In a real app we'd query a user_activity collection
+        stats.value.streak = stats.value.completedTasks > 0 ? Math.floor(stats.value.completedTasks / 3) + 1 : 0; 
+
 
         // 3. Derive Deadlines
         const sortedDates = [...new Set(allPlanning.map(p => p.day))].sort();
@@ -79,6 +103,15 @@ onMounted(() => {
             isLoading.value = false;
         }
     });
+
+    // Rotation des citations
+    quoteInterval = setInterval(() => {
+        currentQuoteIndex.value = (currentQuoteIndex.value + 1) % quotes.length;
+    }, 5000); // Change toutes les 5 secondes
+});
+
+onUnmounted(() => {
+    if (quoteInterval) clearInterval(quoteInterval);
 });
 </script>
 
@@ -95,8 +128,8 @@ onMounted(() => {
     <div class="stats-grid">
         <div class="stat-card">
             <span class="stat-label">🔥 Série de révision</span>
-            <span class="stat-value">3 jours</span>
-            <small style="color:var(--accent)">+1 hier</small>
+            <span class="stat-value">{{ stats.streak }} jours</span>
+            <small style="color:var(--accent)">Continue comme ça !</small>
         </div>
         <div class="stat-card">
              <span class="stat-label">📚 Cours suivis</span>
@@ -104,13 +137,19 @@ onMounted(() => {
             <small style="color:var(--text-light)">Matières actives</small>
         </div>
         <div class="stat-card">
-             <span class="stat-label">✅ Tâches complétées</span>
-            <span class="stat-value">12</span>
-            <small style="color:var(--secondary)">Cette semaine</small>
+             <span class="stat-label">✅ Tâches Totales</span>
+            <span class="stat-value">{{ stats.totalTasks }}</span>
+            <small style="color:var(--secondary)">Enregistrées</small>
         </div>
-        <div class="stat-card" style="background: linear-gradient(135deg, #4F46E5, #818CF8); color: white; border:none;">
-            <span class="stat-label" style="color:rgba(255,255,255,0.8)">💡 Pensée du jour</span>
-            <p style="font-style:italic; margin-top:0.5rem; font-weight:500;">"L'éducation est l'arme la plus puissante pour changer le monde."</p>
+        
+        <!-- Rotating Quote -->
+        <div class="stat-card quote-card">
+            <span class="stat-label" style="color:rgba(255,255,255,0.9)">💡 Pensée du jour</span>
+            <transition name="fade" mode="out-in">
+                <p :key="currentQuoteIndex" class="quote-text">
+                    "{{ quotes[currentQuoteIndex] }}"
+                </p>
+            </transition>
         </div>
     </div>
     
@@ -196,7 +235,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Keep existing styles, just ensure empty-box is handled if not in global css yet (fallback) */
 /* Dashboard Styles */
 .dashboard-header {
   display: flex;
@@ -340,6 +378,32 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.quote-card {
+    background: linear-gradient(135deg, #4F46E5, #818CF8);
+    color: white;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.quote-text {
+    font-style: italic;
+    margin-top: 0.5rem;
+    font-weight: 500;
+    min-height: 3.5rem; 
+}
+
+/* Animations fade */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 600px) {
