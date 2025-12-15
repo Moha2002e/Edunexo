@@ -1,6 +1,8 @@
 import { ref } from 'vue';
 import Groq from 'groq-sdk';
 import MarkdownIt from 'markdown-it';
+import { db, auth } from '../firebase/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function useAiAssistant(isPremium, apiKey) {
     const groq = new Groq({
@@ -96,11 +98,40 @@ export function useAiAssistant(isPremium, apiKey) {
                 generatedContent.value = md.render(result || "Erreur de génération.");
             }
 
+            // Persistence
+            if (auth.currentUser && result) {
+                try {
+                    await addDoc(collection(db, 'users', auth.currentUser.uid, 'ai_history'), {
+                        mode: mode,
+                        input: input,
+                        result: result, // Save raw result for reconstruction
+                        type: (mode === 'quiz' || mode === 'planning' || mode === 'flashcard') ? 'json' : 'text',
+                        createdAt: serverTimestamp()
+                    });
+                } catch (e) {
+                    console.error("Failed to save history:", e);
+                }
+            }
+
         } catch (error) {
             console.error("Groq Error:", error);
             generatedContent.value = "Une erreur est survenue lors de la génération.";
         } finally {
             isLoading.value = false;
+        }
+
+        // SAVE TO HISTORY
+        if (auth.currentUser) {
+            try {
+                const historyData = {
+                    mode: mode,
+                    input: input,
+                    // Use the raw result from generation here, but since it's local scope we need to capture it.
+                    // Actually, let's capture it in the try block or reconstruct it.
+                    // Better approach: Since 'result' was local in try block, we can't access it here.
+                    // I will move this logic INTO the try block success path.
+                };
+            } catch (e) { console.error("Save error", e); }
         }
     };
 
