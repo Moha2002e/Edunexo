@@ -1,11 +1,17 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Calendar, Trash2, BookOpen, Clock, PlayCircle } from 'lucide-vue-next';
+import { ref, onMounted, computed, watch } from 'vue';
+import { Calendar, Trash2, BookOpen, Clock, PlayCircle, List, LayoutGrid } from 'lucide-vue-next';
 import { db, auth } from '../firebase/firebase';
 import { collection, addDoc, getDocs, doc, query, writeBatch, where } from 'firebase/firestore'; 
+// FullCalendar Imports
+import FullCalendar from '@fullcalendar/vue3';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+// Note: timeGridPlugin is not usually needed for tasks unless we have hours, but dayGrid is fine.
 
 const courses = ref([]);
 const planning = ref([]);
+const viewMode = ref('list'); // 'list' | 'calendar'
 const form = ref({
   courseId: '',
   examDate: '',
@@ -13,6 +19,28 @@ const form = ref({
   dailyHours: 2
 });
 const isLoading = ref(true);
+
+// Calendar Options
+const calendarOptions = ref({
+    plugins: [ dayGridPlugin, interactionPlugin ],
+    initialView: 'dayGridMonth',
+    locale: 'fr',
+    headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,dayGridWeek'
+    },
+    buttonText: {
+        today: "Aujourd'hui",
+        month: "Mois",
+        week: "Semaine"
+    },
+    events: [], // Will be populated
+    eventClick: (info) => {
+        alert('Tache : ' + info.event.title + '\nCours : ' + info.event.extendedProps.courseName);
+    },
+    height: 'auto'
+});
 
 const getCollectionRef = (collName) => {
     const user = auth.currentUser;
@@ -26,7 +54,7 @@ const loadData = async () => {
   
   isLoading.value = true;
   try {
-      // 1. Load Courses (to select from)
+      // 1. Load Courses
       const coursesRef = getCollectionRef('courses');
       const coursesSnap = await getDocs(coursesRef);
       courses.value = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -36,8 +64,12 @@ const loadData = async () => {
       const planningSnap = await getDocs(planningRef);
       planning.value = planningSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       
-      // Sort by date
+      // Sort
       planning.value.sort((a, b) => new Date(a.day) - new Date(b.day));
+      
+      // Update Calendar Events
+      updateCalendarEvents();
+
   } catch(e) {
       console.error("Error loading data:", e);
   } finally {
@@ -45,12 +77,26 @@ const loadData = async () => {
   }
 };
 
+const updateCalendarEvents = () => {
+    calendarOptions.value.events = planning.value.map(item => ({
+        title: item.task,
+        date: item.day, // Format YYYY-MM-DD matches
+        extendedProps: {
+            courseName: item.courseName,
+            courseId: item.courseId
+        },
+        // Color based on course hash or similar? For now generic
+        backgroundColor: 'var(--primary)',
+        borderColor: 'var(--primary)'
+    }));
+};
+
 const formatDate = (dateStr) => {
   const options = { weekday: 'short', day: 'numeric', month: 'short' };
   return new Date(dateStr).toLocaleDateString('fr-FR', options);
 };
 
-// Group by day for display
+// Group by day for display (List View)
 const groupedPlanning = () => {
   const groups = {};
   planning.value.forEach(item => {
@@ -87,7 +133,7 @@ const generatePlanning = async () => {
     const dayIndex = Math.floor( (i / chaptersToRevise) * diffDays );
     const taskDate = new Date(start);
     taskDate.setDate(start.getDate() + dayIndex + 1); 
-    const dateStr = taskDate.toLocaleDateString('sv');
+    const dateStr = taskDate.toLocaleDateString('sv'); // ISO format YYYY-MM-DD
     
     newTasks.push({
       day: dateStr,
@@ -97,30 +143,25 @@ const generatePlanning = async () => {
     });
   }
 
-  // 2. Batch Write: Delete old tasks for this course & Add new ones
+  // 2. Batch Write
   const planningRef = getCollectionRef('planning');
   if(!planningRef) return;
   const batch = writeBatch(db);
 
-  // Find existing tasks for this course to delete
-  // Note: Client-side filtering because we loaded everything, but ideally usage of query()
-  // Just to be safe and simple: delete all remote docs for this courseId?
-  // We need their IDs. The local 'planning' has them.
   const tasksToDelete = planning.value.filter(p => p.courseId === course.id);
   
   tasksToDelete.forEach(task => {
       batch.delete(doc(db, 'users', auth.currentUser.uid, 'planning', task.id));
   });
 
-  // Add new tasks
   newTasks.forEach(task => {
-      const newDocRef = doc(planningRef); // Generate ID
+      const newDocRef = doc(planningRef);
       batch.set(newDocRef, task);
   });
 
   try {
       await batch.commit();
-      await loadData(); // Reload to sync
+      await loadData();
       form.value.chaptersCount = 1;
   } catch(e) {
       console.error("Error generating planning:", e);
@@ -140,6 +181,7 @@ const clearAll = async () => {
     try {
         await batch.commit();
         planning.value = [];
+        updateCalendarEvents();
     } catch(e) {
         console.error("Error clearing planning:", e);
     }
@@ -205,28 +247,41 @@ onMounted(() => {
       <div class="planning-display">
         <div class="header-row">
           <h2>Votre Planning</h2>
-          <button @click="clearAll" v-if="planning.length > 0" class="clear-btn">
-            <Trash2 size="16" style="margin-right:4px;" /> Tout effacer
-          </button>
+          <div class="actions">
+             <button class="icon-toggle" @click="viewMode = 'list'" :class="{ active: viewMode === 'list' }"><List size="18"/></button>
+             <button class="icon-toggle" @click="viewMode = 'calendar'" :class="{ active: viewMode === 'calendar' }"><LayoutGrid size="18"/></button>
+             
+             <button @click="clearAll" v-if="planning.length > 0" class="clear-btn ml-2">
+                <Trash2 size="16" />
+             </button>
+          </div>
         </div>
 
         <div v-if="isLoading" style="color:var(--text-light); font-style:italic;">Chargement...</div>
         
         <div v-else>
             <div v-if="planning.length === 0" class="empty-box">
-            <Calendar size="48" class="empty-icon" />
-            <div class="empty-text">Ton planning est vide</div>
-            <div class="empty-sub">Remplis le formulaire pour générer tes révisions.</div>
+                <Calendar size="48" class="empty-icon" />
+                <div class="empty-text">Ton planning est vide</div>
+                <div class="empty-sub">Remplis le formulaire pour générer tes révisions.</div>
             </div>
             
-            <div v-for="group in groupedPlanning()" :key="group.date" class="day-group">
-            <div class="day-header">{{ formatDate(group.date) }}</div>
-            <div class="day-tasks">
-                <div v-for="(item, idx) in group.items" :key="idx" class="task-card">
-                <span class="badg">{{ item.courseName }}</span>
-                <span class="task-name">{{ item.task }}</span>
+            <!-- LIST MODE -->
+            <div v-if="viewMode === 'list'">
+                <div v-for="group in groupedPlanning()" :key="group.date" class="day-group">
+                    <div class="day-header">{{ formatDate(group.date) }}</div>
+                    <div class="day-tasks">
+                        <div v-for="(item, idx) in group.items" :key="idx" class="task-card">
+                        <span class="badg">{{ item.courseName }}</span>
+                        <span class="task-name">{{ item.task }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- CALENDAR MODE -->
+            <div v-if="viewMode === 'calendar'" class="calendar-wrapper">
+                 <FullCalendar :options="calendarOptions" />
             </div>
         </div>
         
@@ -261,6 +316,26 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 1rem;
 }
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.icon-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    padding: 0.4rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+}
+.icon-toggle.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
 .clear-btn {
   background: transparent;
   color: #e74c3c;
@@ -270,12 +345,19 @@ onMounted(() => {
   align-items: center;
   border-radius: 8px;
   transition: all 0.2s;
+  border: none; 
+  cursor: pointer;
 }
 .clear-btn:hover {
   background: #fff5f5;
 }
+.ml-2 { margin-left: 0.5rem; }
+
 .planning-display {
   padding-left: 1rem;
+  /* Make sure calendar takes space */
+  flex: 1; 
+  min-width: 0; /* Fix flex overflow */
 }
 /* Mobile tweak for planning display padding */
 @media (max-width: 768px) {
@@ -302,18 +384,18 @@ onMounted(() => {
   gap: 0.8rem;
 }
 .task-card {
-  background: var(--white);
+  background: var(--surface); 
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 .badg {
   font-size: 0.75rem;
-  background: #F4F7FC;
+  background: var(--bg-color);
   color: var(--text-light);
   padding: 0.2rem 0.6rem;
   border-radius: 4px;
@@ -321,13 +403,42 @@ onMounted(() => {
 }
 .task-name {
   font-weight: 500;
+  color: var(--text-dark);
 }
 
-@media (max-width: 500px) {
-  .task-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
+.calendar-wrapper {
+    background: var(--surface);
+    padding: 1rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+}
+
+/* FullCalendar Overrides for Theme */
+:deep(.fc) {
+    font-family: 'Outfit', sans-serif;
+}
+:deep(.fc-toolbar-title) {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+:deep(.fc-button) {
+    background: var(--primary);
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+:deep(.fc-button-active) {
+    background: var(--primary-hover) !important;
+}
+:deep(.fc-daygrid-day-number) {
+    color: var(--text-dark);
+    text-decoration: none;
+}
+:deep(.fc-col-header-cell-cushion) {
+    color: var(--text-light);
+    font-weight: 600;
+    text-decoration: none;
 }
 </style>
