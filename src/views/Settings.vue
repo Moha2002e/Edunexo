@@ -1,5 +1,4 @@
-<script setup>
-import { ref } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { User, Mail, Bell, Moon, Save, LogOut } from 'lucide-vue-next';
 import { auth } from '../firebase/firebase';
 import { updateProfile, signOut } from 'firebase/auth';
@@ -10,11 +9,29 @@ const user = ref(auth.currentUser);
 const displayName = ref(user.value?.displayName || '');
 const email = ref(user.value?.email || '');
 const msg = ref('');
-const msgType = ref('success'); // success | error
+const msgType = ref('success');
 
-// Preferences (Mock)
+// Preferences
 const emailNotif = ref(true);
 const darkMode = ref(false);
+
+onMounted(() => {
+    // Check local storage or system preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        darkMode.value = true;
+    }
+});
+
+watch(darkMode, (newVal) => {
+    if (newVal) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    }
+});
 
 const updateName = async () => {
     try {
@@ -108,7 +125,7 @@ const getInitials = () => {
                         <p class="pref-desc">Thème sombre pour moins de fatigue (Bientôt).</p>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" v-model="darkMode" disabled>
+                        <input type="checkbox" v-model="darkMode">
                         <span class="slider round"></span>
                     </label>
                 </div>

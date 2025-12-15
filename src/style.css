@@ -9,38 +9,67 @@
 }
 
 :root {
-  --primary: #2563EB;
-  /* Vibrant Blue (Inter) */
-  --secondary: #4F46E5;
-  /* Indigo */
+  --primary: #4F46E5;
+  /* Indigo 600 - More vibrant */
+  --primary-hover: #4338CA;
+  --secondary: #ec4899;
+  /* Pink 500 - Playful accent */
   --accent: #10B981;
-  /* Success Green */
-  --bg-color: #F8FAFC;
-  /* Clean Slate Background */
-  --surface: #FFFFFF;
-  --text-dark: #0F172A;
-  /* Slate 900 */
-  --text-light: #64748B;
-  /* Slate 500 */
-  --border-color: #E2E8F0;
+  /* Emerald 500 */
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  /* Light Theme - Softer */
+  --bg-color: #F3F4F6;
+  /* Cool Gray 100 */
+  --bg-gradient: linear-gradient(135deg, #F3F4F6 0%, #E0E7FF 100%);
+  /* Subtle blue tint */
+  --surface: #FFFFFF;
+  --surface-hover: #F9FAFB;
+  --text-dark: #111827;
+  /* Gray 900 */
+  --text-light: #6B7280;
+  /* Gray 500 */
+  --border-color: #E5E7EB;
+  /* Gray 200 */
+
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --card-shadow: var(--shadow-sm);
-  /* Default card shadow */
 
   --radius: 16px;
-  --font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+/* DARK MODE OVERRIDES */
+:root.dark {
+  --bg-color: #0F172A;
+  /* Slate 900 */
+  --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+  /* Deep Navy */
+  --surface: #1E293B;
+  /* Slate 800 */
+  --surface-hover: #334155;
+  --text-dark: #F8FAFC;
+  /* Slate 50 */
+  --text-light: #94A3B8;
+  /* Slate 400 */
+  --border-color: #334155;
+  /* Slate 700 */
+
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
 }
 
 body {
   margin: 0;
   font-family: var(--font-family);
-  background-color: var(--bg-color);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  /* Parallax effect */
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 h1,

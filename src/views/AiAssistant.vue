@@ -49,24 +49,30 @@ const generate = () => {
 };
 
 const downloadPDF = () => {
-    const element = document.getElementById('ai-result-content');
+    let elementId = 'ai-result-content';
+    if (selectedMode.value === 'quiz') elementId = 'quiz-result-container';
+    else if (selectedMode.value === 'planning') elementId = 'planning-result-container';
+    else if (selectedMode.value === 'flashcard') return; // Not really printable in 3D
+
+    const element = document.getElementById(elementId);
     if (!element) return;
     
+    // Clone options to avoid persisting changes (optional but safer)
     const opt = {
-      margin:       1,
+      margin:       0.5,
       filename:     `Edunexo_${selectedMode.value}_${new Date().toISOString().slice(0,10)}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
+      html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
     
     html2pdf().set(opt).from(element).save();
 };
 
-
 /**
  * UI HELPERS
  */
+
 const selectAnswer = (qIndex, oIndex) => {
     if (quizCompleted.value) return; 
     userAnswers.value[qIndex] = oIndex;
@@ -199,24 +205,29 @@ const copyToClipboard = async () => {
         </div>
 
         <!-- INTERACTIVE QUIZ RESULT -->
-        <div v-if="quizData" class="quiz-interface">
+        <div v-if="quizData" id="quiz-result-container" class="quiz-interface">
             <div class="quiz-header">
                 <h3>Quiz de révision</h3>
-                <span v-if="quizCompleted" class="score-badge" :style="{ background: currentQuizScore >= (quizData.length/2) ? '#10B981' : '#EF4444' }">
-                    Note : {{ currentQuizScore }}/{{ quizData.length }}
-                </span>
+                <div class="header-actions">
+                     <button @click="downloadPDF" class="icon-btn" title="Télécharger le Quiz"><Download size="16"/></button>
+                     <span v-if="quizCompleted" class="score-badge" :style="{ background: currentQuizScore >= (quizData.length/2) ? '#10B981' : '#EF4444' }">
+                        Note : {{ currentQuizScore }}/{{ quizData.length }}
+                    </span>
+                </div>
             </div>
             <div v-for="(q, qIdx) in quizData" :key="qIdx" class="quiz-question">
                 <p class="q-text"><strong>{{ qIdx + 1 }}.</strong> {{ q.text }}</p>
                 <div class="options-grid">
+                    <!-- Removing click handlers for PDF view is hard, but css styles will persist -->
                     <button v-for="(opt, oIdx) in q.options" :key="oIdx" class="option-btn" :class="getOptionClass(qIdx, oIdx)" @click="selectAnswer(qIdx, oIdx)">
                         {{ opt }}
                     </button>
                 </div>
+                <!-- Force show answer in PDF? Maybe only if completed. -->
                 <div v-if="quizCompleted" class="explanation">💡 {{ q.explanation }}</div>
             </div>
-            <button v-if="!quizCompleted" @click="submitQuiz" class="btn-submit-quiz">Valider mes réponses</button>
-            <button v-else @click="generate" class="btn-retry"><RefreshCw size="16"/> Nouveau quiz</button>
+            <button v-if="!quizCompleted" @click="submitQuiz" class="btn-submit-quiz" data-html2canvas-ignore="true">Valider mes réponses</button>
+            <button v-else @click="generate" class="btn-retry" data-html2canvas-ignore="true"><RefreshCw size="16"/> Nouveau quiz</button>
         </div>
         
         <!-- FLASHCARDS INTERFACE -->
@@ -390,7 +401,65 @@ textarea:focus { border-color: #A855F7; background: white; box-shadow: 0 0 0 4px
     opacity: 0.3;
 }
 
-:deep(.markdown-body h1), :deep(.markdown-body h2) { margin-top: 1rem; color: #111827; }
-:deep(.markdown-body ul) { padding-left: 1.5rem; }
-:deep(.markdown-body strong) { color: #7E22CE; }
+/* Result Content - Document Style */
+.result-content { 
+    padding: 2.5rem; 
+    line-height: 1.8; 
+    color: #374151; 
+    font-size: 1.05rem;
+}
+
+:deep(.markdown-body h1) { 
+    font-size: 1.8rem; 
+    color: #111827; 
+    border-bottom: 2px solid #E5E7EB; 
+    padding-bottom: 0.5rem; 
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+:deep(.markdown-body h2) { 
+    font-size: 1.5rem; 
+    color: #4F46E5; 
+    margin-top: 1.8rem; 
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+:deep(.markdown-body h3) { 
+    font-size: 1.25rem; 
+    color: #1F2937; 
+    margin-top: 1.5rem; 
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+}
+
+:deep(.markdown-body ul), :deep(.markdown-body ol) { 
+    padding-left: 1.5rem; 
+    margin-bottom: 1.5rem;
+}
+
+:deep(.markdown-body li) { 
+    margin-bottom: 0.5rem; 
+    position: relative;
+}
+
+:deep(.markdown-body strong) { 
+    color: #4338CA; /* Indigo */
+    font-weight: 700;
+}
+
+:deep(.markdown-body blockquote) {
+    border-left: 4px solid #818CF8;
+    background: #EEF2FF;
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: 0 8px 8px 0;
+    color: #312E81;
+    font-style: italic;
+}
+
+:deep(.markdown-body p) {
+    margin-bottom: 1.2rem;
+}
 </style>
