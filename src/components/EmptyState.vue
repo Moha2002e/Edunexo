@@ -18,7 +18,7 @@ defineProps({
 <style scoped>
 .empty-box {
   text-align: center;
-  background: white;
+  background: var(--surface);
   border: 2px dashed #e0e0e0;
   border-radius: 12px;
   padding: 3rem 1rem;

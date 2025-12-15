@@ -113,7 +113,7 @@ const subscribe = (planId) => {
 
 .pricing-card.featured {
     border: 2px solid var(--primary);
-    background: linear-gradient(to bottom, #FFFFFF, #F8FAFC);
+    background: var(--surface);
     transform: scale(1.02);
     box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.15);
     z-index: 10;

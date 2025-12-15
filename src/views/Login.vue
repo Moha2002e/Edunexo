@@ -132,7 +132,7 @@ const resetPassword = async () => {
 }
 
 .auth-card {
-  background: white;
+  background: var(--surface);
   padding: 3rem;
   border-radius: 24px;
   box-shadow: var(--shadow-lg); /* Deeper shadow for pop */
@@ -140,6 +140,7 @@ const resetPassword = async () => {
   max-width: 420px;
   border: 1px solid var(--border-color);
 }
+
 
 .auth-header {
   text-align: center;

@@ -95,7 +95,7 @@ const register = async () => {
 }
 
 .auth-card {
-  background: white;
+  background: var(--surface);
   padding: 3rem;
   border-radius: 24px;
   box-shadow: var(--shadow-lg);

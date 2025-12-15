@@ -371,7 +371,7 @@ onMounted(() => {
     backdrop-filter: blur(4px);
 }
 .modal-content {
-    background: white;
+    background: var(--surface);
     padding: 2rem;
     border-radius: 20px;
     width: 100%;
