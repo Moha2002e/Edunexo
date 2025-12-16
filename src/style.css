@@ -20,8 +20,9 @@
   --glass-border: rgba(255, 255, 255, 0.4);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   --glass-blur: blur(16px);
-  --mac-radius: 20px;
+  --mac-radius: 30px;
   /* Mac style rounded corners */
+  --radius: 24px;
 
   --text-dark: #1e293b;
   --text-light: #475569;
@@ -107,8 +108,8 @@ h2 {
 button {
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 14px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 24px;
+  padding: 0.75rem 1.75rem;
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -165,7 +166,7 @@ textarea {
   border: 1px solid var(--glass-border);
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
-  border-radius: 14px;
+  border-radius: 24px;
   font-size: 0.95rem;
   margin-bottom: 1.25rem;
   color: var(--text-dark);
@@ -386,7 +387,7 @@ textarea:focus {
 .stat-card {
   background: white;
   padding: 1.5rem;
-  border-radius: var(--radius);
+  border-radius: 30px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
   display: flex;

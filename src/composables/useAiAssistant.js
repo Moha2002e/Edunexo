@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import Groq from 'groq-sdk';
 import MarkdownIt from 'markdown-it';
 import { db, auth } from '../firebase/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 
 export function useAiAssistant(isPremium, apiKey) {
     const groq = new Groq({
@@ -17,11 +17,43 @@ export function useAiAssistant(isPremium, apiKey) {
     const planningData = ref(null);
     const isLoading = ref(false);
 
+    const FREE_MODES = ['summary', 'explain', 'qa'];
+    const FREE_DAILY_LIMIT = 3;
+
+    const checkLimit = async () => {
+        if (!auth.currentUser) return false;
+
+        // 1. Check Mode Access
+        // Handled in UI, but good to have double check or just rely on limit
+
+        // 2. Check Daily Limit
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const q = query(
+            collection(db, 'users', auth.currentUser.uid, 'ai_history'),
+            where('createdAt', '>=', today)
+        );
+        const snap = await getDocs(q);
+        return snap.size < FREE_DAILY_LIMIT;
+    };
+
     const generateAiResponse = async (mode, input, hasAccess, options = {}) => {
         if (!input) return;
+
+        // FREEMIUM LOGIC
         if (!hasAccess) {
-            alert("Cette fonctionnalité est réservée aux membres Premium !");
-            return;
+            // Check allowed modes
+            if (!FREE_MODES.includes(mode)) {
+                alert("🔒 Mode réservé aux membres Premium !");
+                return;
+            }
+            // Check usage limit
+            const canProceed = await checkLimit();
+            if (!canProceed) {
+                alert(`🚫 Limite quotidienne atteinte (${FREE_DAILY_LIMIT}/jour). Passez Premium pour l'illimité !`);
+                return;
+            }
         }
 
         isLoading.value = true;

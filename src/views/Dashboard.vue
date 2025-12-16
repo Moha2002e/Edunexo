@@ -148,25 +148,10 @@ onUnmounted(() => {
     </div>
     
     <!-- Stats Row -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <span class="stat-label">🔥 Série de révision</span>
-            <span class="stat-value">{{ stats.streak }} jours</span>
-            <small style="color:var(--accent)">Continue comme ça !</small>
-        </div>
-        <div class="stat-card">
-             <span class="stat-label">📚 Cours suivis</span>
-            <span class="stat-value">{{ courses.length }}</span>
-            <small style="color:var(--text-light)">Matières actives</small>
-        </div>
-        <div class="stat-card">
-             <span class="stat-label">✅ Tâches Totales</span>
-            <span class="stat-value">{{ stats.totalTasks }}</span>
-            <small style="color:var(--secondary)">Enregistrées</small>
-        </div>
-        
+    <!-- Stats Row / Quote -->
+    <div class="stats-grid-full">
         <!-- Rotating Quote -->
-        <div class="stat-card quote-card">
+        <div class="stat-card quote-card full-width-quote">
             <span class="stat-label" style="color:rgba(255,255,255,0.9)">💡 Pensée du jour</span>
             <transition name="fade" mode="out-in">
                 <p :key="currentQuoteIndex" class="quote-text">
@@ -457,5 +442,18 @@ onUnmounted(() => {
     font-weight: 700;
     cursor: pointer;
     margin-left: auto;
+}
+
+.stats-grid-full {
+    display: flex;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.full-width-quote {
+    width: 100%;
+    padding: 2rem;
+    text-align: center;
+    font-size: 1.2rem;
 }
 </style>

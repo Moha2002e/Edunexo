@@ -177,29 +177,28 @@ const copyToClipboard = async () => {
         </div>
     </div>
 
-    <!-- Premium Gate -->
-    <div v-if="!isPremiumLoading && !hasAccess()" class="premium-gate">
-        <Lock size="48" class="lock-icon" />
-        <h2>Fonctionnalité Premium</h2>
-        <p>Débloquez l'IA illimitée : Quiz, Flashcards, Correction...</p>
-        <router-link to="/premium" class="btn-upgrade">Passer Premium</router-link>
+    <!-- Premium Banner (Small) -->
+    <div v-if="!isPremiumLoading && !hasAccess()" class="premium-banner-small">
+        <span>🚀 <strong>Mode gratuit actif</strong> : 3 essais/jour. Débloquez tout avec Premium.</span>
+        <router-link to="/premium" class="btn-xs">Uppgrade</router-link>
     </div>
 
-    <div class="ai-grid" :class="{ 'blurred': !hasAccess() && !isPremiumLoading }">
+    <div class="ai-grid">
       <!-- Controls -->
       <div class="card h-fit control-panel">
         
         <label class="section-label">Je veux générer :</label>
         <div class="select-wrapper">
             <select v-model="selectedMode" class="mode-select">
-                <option value="summary">📝 Résumé de cours</option>
-                <option value="sheet">📄 Fiche de révision</option>
-                <option value="explain">💡 Explique-moi simplement</option>
-                <option value="qa">🙋 Question / Réponse</option>
-                <option value="quiz">❓ Quiz Interactif</option>
-                <option value="flashcard">🃏 Flashcards (Mémoire)</option>
-                <option value="improve">✍️ Améliorer mon texte</option>
-                <option value="planning">📅 Planning de révision</option>
+                <option value="summary">📝 Résumé de cours (Gratuit)</option>
+                <option value="explain">💡 Explique-moi (Gratuit)</option>
+                <option value="qa">🙋 Question / Réponse (Gratuit)</option>
+                <option disabled>──────────────</option>
+                <option value="sheet" :disabled="!hasAccess()">📄 Fiche de révision (Premium 🔒)</option>
+                <option value="quiz" :disabled="!hasAccess()">❓ Quiz Interactif (Premium 🔒)</option>
+                <option value="flashcard" :disabled="!hasAccess()">🃏 Flashcards (Premium 🔒)</option>
+                <option value="improve" :disabled="!hasAccess()">✍️ Correction (Premium 🔒)</option>
+                <option value="planning" :disabled="!hasAccess()">📅 Planning (Premium 🔒)</option>
             </select>
         </div>
 
@@ -374,4 +373,25 @@ textarea { background: var(--bg-color); }
 .task-list { list-style: none; padding: 1rem; margin: 0; }
 .task-list li { display: flex; gap: 8px; align-items: start; margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--text-dark); }
 .check-icon { min-width: 14px; margin-top: 3px; color: #10B981; }
+
+.premium-banner-small {
+    background: linear-gradient(90deg, #4F46E5, #EC4899);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+}
+.btn-xs {
+    background: white;
+    color: var(--primary);
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
 </style>
