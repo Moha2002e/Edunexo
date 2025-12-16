@@ -276,6 +276,30 @@ const copyToClipboard = async () => {
                 </div>
             </div>
         </div>
+        
+        <!-- PLANNING RESULT -->
+        <div v-if="planningData" id="planning-result-container" class="planning-interface">
+             <div class="result-header">
+                <h3>📅 Planning Généré</h3>
+                <button @click="downloadPDF" class="icon-btn" title="Télécharger PDF"><Download size="16"/></button>
+            </div>
+             
+             <div v-if="planningData.advice" class="planning-advice">
+                 <strong>💡 Conseil du coach :</strong> {{ planningData.advice }}
+             </div>
+
+             <div class="planning-grid">
+                <div v-for="(day, idx) in planningData.schedule" :key="idx" class="planning-card">
+                    <div class="day-header">{{ day.day }}</div>
+                    <div class="day-focus" v-if="day.focus">🎯 Focus: {{ day.focus }}</div>
+                    <ul class="task-list">
+                        <li v-for="(task, tIdx) in day.tasks" :key="tIdx">
+                            <Check size="14" class="check-icon"/> {{ task }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
       </div>
     </div>
@@ -339,4 +363,15 @@ const copyToClipboard = async () => {
 .flashcard-back { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; transform: rotateY(180deg); }
 .mode-select, textarea, .small-input { width: 100%; padding: 0.8rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--surface); color: var(--text-dark); font-family: inherit; }
 textarea { background: var(--bg-color); }
+
+/* PLANNING STYLES */
+.planning-interface { padding: 2rem; }
+.planning-advice { background: #eff6ff; color: #1e40af; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid #3b82f6; }
+.planning-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+.planning-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.day-header { background: var(--bg-color); padding: 0.8rem; font-weight: 700; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--primary); }
+.day-focus { font-size: 0.85rem; padding: 0.5rem 1rem; color: #d97706; background: #fffbeb; border-bottom: 1px solid #fef3c7; font-weight: 600; }
+.task-list { list-style: none; padding: 1rem; margin: 0; }
+.task-list li { display: flex; gap: 8px; align-items: start; margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--text-dark); }
+.check-icon { min-width: 14px; margin-top: 3px; color: #10B981; }
 </style>

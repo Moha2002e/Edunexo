@@ -120,19 +120,7 @@ export function useAiAssistant(isPremium, apiKey) {
             isLoading.value = false;
         }
 
-        // SAVE TO HISTORY
-        if (auth.currentUser) {
-            try {
-                const historyData = {
-                    mode: mode,
-                    input: input,
-                    // Use the raw result from generation here, but since it's local scope we need to capture it.
-                    // Actually, let's capture it in the try block or reconstruct it.
-                    // Better approach: Since 'result' was local in try block, we can't access it here.
-                    // I will move this logic INTO the try block success path.
-                };
-            } catch (e) { console.error("Save error", e); }
-        }
+
     };
 
     return {
