@@ -69,9 +69,13 @@ export function useAiAssistant(isPremium, apiKey) {
                     userPrompt = `Question :\n\n${input}`;
                     break;
                 case 'planning':
-                    systemPrompt = `Tu es un coach. Réponds UNIQUEMENT avec un JSON valide.
-                    Structure : { "schedule": [ { "day": "...", "tasks": ["..."], "focus": "..." } ], "advice": "..." }`;
-                    userPrompt = `Crée un planning pour :\n\n${input}`;
+                    systemPrompt = `Tu es un coach pédagogique expert. Ton but est de créer un PLANNING DE RÉVISION équilibré.
+                    1. Analyse l'horaire fourni par l'élève (cours, examens).
+                    2. Insère des CRÉNEAUX DE RÉVISION (1h-2h) dans les trous libres et le soir.
+                    3. Priorise les matières importantes ou celles avec un examen proche.
+                    4. Réponds UNIQUEMENT avec un JSON valide.
+                    Structure : { "schedule": [ { "day": "Lundi 05/01", "tasks": ["8h-10h: Cours", "16h-18h: Révision XML (Fiches)", "18h-19h: Quiz"], "focus": "XML & Bases de données" } ], "advice": "Ton conseil ici..." }`;
+                    userPrompt = `Voici mon emploi du temps / mes examens : \n\n${input}\n\n Génère mon planning de révision optimal pour réussir.`;
                     break;
             }
 
