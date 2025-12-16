@@ -1,24 +1,12 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { Calendar, Trash2, BookOpen, Clock, PlayCircle, List, LayoutGrid } from 'lucide-vue-next';
-import { db, auth } from '../firebase/firebase';
-import { collection, addDoc, getDocs, doc, query, writeBatch, where } from 'firebase/firestore'; 
-// FullCalendar Imports
-import FullCalendar from '@fullcalendar/vue3';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
-// Note: timeGridPlugin is not usually needed for tasks unless we have hours, but dayGrid is fine.
+import { Calendar, Trash2, BookOpen, Clock, PlayCircle, List, LayoutGrid, X } from 'lucide-vue-next';
+// ...
+const selectedTask = ref(null);
 
-const courses = ref([]);
-const planning = ref([]);
-const viewMode = ref('list'); // 'list' | 'calendar'
-const form = ref({
-  courseId: '',
-  examDate: '',
-  chaptersCount: 1,
-  dailyHours: 2
-});
-const isLoading = ref(true);
+const closeTaskModal = () => {
+    selectedTask.value = null;
+};
 
 // Calendar Options
 const calendarOptions = ref({
@@ -35,9 +23,14 @@ const calendarOptions = ref({
         month: "Mois",
         week: "Semaine"
     },
-    events: [], // Will be populated
+    events: [],
     eventClick: (info) => {
-        alert('Tache : ' + info.event.title + '\nCours : ' + info.event.extendedProps.courseName);
+        // Replace alert with modal
+        selectedTask.value = {
+            title: info.event.title,
+            date: info.event.startStr, // or info.event.start
+            extendedProps: info.event.extendedProps
+        };
     },
     height: 'auto'
 });
@@ -287,6 +280,40 @@ onMounted(() => {
         
       </div>
     </div>
+
+    <!-- Task Detail Modal -->
+    <transition name="fade">
+        <div v-if="selectedTask" class="modal-backdrop" @click.self="closeTaskModal">
+            <div class="glass-modal">
+                <div class="modal-header">
+                    <h3>Détails du Planning</h3>
+                    <button @click="closeTaskModal" class="close-btn"><X size="20" /></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="detail-item">
+                        <label>Tâche</label>
+                        <p class="highlight">{{ selectedTask.title }}</p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Matière</label>
+                        <div class="course-badge">
+                            <BookOpen size="16"/> {{ selectedTask.extendedProps.courseName }}
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Date</label>
+                         <p class="date-text"><Calendar size="16" style="vertical-align:bottom; margin-right:5px;"/> {{ formatDate(selectedTask.date) }}</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="closeTaskModal" class="btn primary full-width">C'est noté 👍</button>
+                    <!-- Future: Add 'Mark as Done' or Delete here -->
+                </div>
+            </div>
+        </div>
+    </transition>
   </div>
 </template>
 
@@ -441,4 +468,85 @@ onMounted(() => {
     font-weight: 600;
     text-decoration: none;
 }
+
+/* Glass Modal Styles */
+.modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.glass-modal {
+    background: rgba(255, 255, 255, 0.85); /* Slightly more opaque for readability */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    border-radius: 24px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 400px;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Very subtle divider */
+    padding-bottom: 1rem;
+}
+
+.modal-header h3 { font-size: 1.4rem; color: var(--text-dark); margin: 0; }
+
+.detail-item {
+    margin-bottom: 1.5rem;
+}
+
+.detail-item label {
+    display: block;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.highlight {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+.course-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #EEF2FF;
+    color: var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.date-text {
+    font-size: 1.1rem;
+    color: var(--text-dark);
+    margin: 0;
+}
+.modal-footer { margin-top: 2rem; }
+.close-btn { background:none; border:none; cursor:pointer; color: var(--text-light); }
+.close-btn:hover { color: var(--text-dark); }
 </style>

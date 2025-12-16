@@ -67,54 +67,44 @@ onMounted(() => {
       <p>Ajoute tes matières pour centraliser ta progression.</p>
     </div>
     
-    <div class="grid-2">
-      <!-- Formulaire d'ajout -->
-      <div class="card h-fit add-card">
-        <h2>Ajouter un cours</h2>
-        <form @submit.prevent="handleAddCourse">
-          <label>Matière</label>
-          <div class="input-with-icon">
-            <BookOpen size="18" class="input-icon" />
-            <input v-model="newCourse.name" placeholder="Ex: Mathématiques" required />
-          </div>
-          
-          <label>Nombre de chapitres</label>
-           <div class="input-with-icon">
-             <GraduationCap size="18" class="input-icon" />
-             <input type="number" v-model="newCourse.totalChapters" min="1" required />
-           </div>
-          
-          <label>Professeur (Optionnel)</label>
-          <div class="input-with-icon">
-             <User size="18" class="input-icon" />
-             <input v-model="newCourse.teacher" placeholder="Ex: M. Dupont" />
-          </div>
-          
-          <button type="submit" class="primary full-width">
-              <PlusCircle size="18" /> Ajouter
-          </button>
-        </form>
-      </div>
-
-      <!-- Liste des cours -->
-      <div class="courses-column">
-        <div v-if="isLoading" class="loading-state">
-            <div class="spinner"></div> Chargement...
-        </div>
-        
-        <div v-else>
-            <div v-if="courses.length === 0" class="empty-box">
-              <GraduationCap size="48" class="empty-icon" />
-              <div class="empty-text">Aucun cours</div>
-              <div class="empty-sub">Commence par ajouter te matières à gauche.</div>
+    <!-- Quick Add Bar -->
+    <div class="card quick-add-bar">
+        <form @submit.prevent="handleAddCourse" class="inline-form">
+            <div class="input-group">
+                <BookOpen size="18" class="input-icon-inline" />
+                <input v-model="newCourse.name" placeholder="Nom de la matière..." required class="clean-input" />
             </div>
             
-            <div v-for="course in courses" :key="course.id" class="card course-card">
-              <div class="card-top">
-                 <div class="course-info">
-                  <h3>{{ course.name }}</h3>
-                  <p v-if="course.teacher" class="prof">Prof. {{ course.teacher }}</p>
+            <div class="input-group small">
+                <GraduationCap size="18" class="input-icon-inline" />
+                <input type="number" v-model="newCourse.totalChapters" min="1" placeholder="Chapitres" required class="clean-input" />
+            </div>
+
+            <button type="submit" class="primary btn-add">
+                <PlusCircle size="18" /> <span class="desktop-only">Ajouter</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Course List Grid -->
+    <div v-if="isLoading" class="loading-state">
+        <div class="spinner"></div> Chargement...
+    </div>
+
+    <div v-else class="courses-grid-container">
+        <div v-if="courses.length === 0" class="empty-box full-width">
+            <GraduationCap size="48" class="empty-icon" />
+            <div class="empty-text">Aucun cours</div>
+            <div class="empty-sub">Utilise la barre ci-dessus pour ajouter tes matières rapidement.</div>
+        </div>
+        
+        <div v-for="course in courses" :key="course.id" class="card course-card">
+            <div class="card-top">
+                <div class="course-info">
+                   <h3>{{ course.name }}</h3>
+                   <p v-if="course.teacher" class="prof">Prof. {{ course.teacher }}</p>
                 </div>
+                <!-- ... existing card actions ... -->
                 <div class="card-actions">
                     <button @click="openEditModal(course)" class="icon-btn edit" title="Modifier">
                         <Edit2 size="18" />
@@ -123,37 +113,32 @@ onMounted(() => {
                         <Trash2 size="18" />
                     </button>
                 </div>
-              </div>
-              
-              <div class="stats-row">
+            </div>
+               
+             <div class="stats-row">
                 <span class="progress-text">
-                  <span class="bold">{{ course.completedChapters }}</span> / {{ course.totalChapters }} chapitres
+                  <span class="bold">{{ course.completedChapters }}</span> / {{ course.totalChapters }}
                 </span>
                 <span class="percent">
                   {{ Math.round((course.completedChapters / course.totalChapters) * 100) }}%
                 </span>
-              </div>
+             </div>
               
-              <div class="progress-bar-container">
-                <div class="progress-bar">
-                  <div 
-                    class="progress-fill" 
-                    :style="{ width: (course.completedChapters / course.totalChapters * 100) + '%' }">
-                  </div>
-                </div>
-              </div>
+             <div class="progress-bar-container">
+               <div class="progress-bar">
+                 <div class="progress-fill" :style="{ width: (course.completedChapters / course.totalChapters * 100) + '%' }"></div>
+               </div>
+             </div>
               
-              <div class="actions-row">
+             <div class="actions-row">
                  <button @click="updateCourseProgress(course, -1)" class="action-btn outline" :disabled="course.completedChapters <= 0">
                    <MinusCircle size="20" />
                  </button>
                  <button @click="updateCourseProgress(course, 1)" class="action-btn primary" :disabled="course.completedChapters >= course.totalChapters">
                    <PlusCircle size="20" />
                  </button>
-              </div>
-            </div>
+             </div>
         </div>
-      </div>
     </div>
 
     <!-- Edit Modal Overlay -->
@@ -351,53 +336,92 @@ onMounted(() => {
 }
 @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
-@media (max-width: 900px) {
-    .grid-2 { grid-template-columns: 1fr; }
-    .add-card { position: static; }
+/* Inline Quick Add */
+.quick-add-bar {
+    padding: 1rem;
+    margin-bottom: 2rem;
+    background: var(--surface);
+    border-radius: 99px; /* Pill shape for the bar */
+    display: flex;
+    align-items: center;
 }
 
-/* Modal Styles */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
+.inline-form {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px);
-}
-.modal-content {
-    background: var(--surface);
-    padding: 2rem;
-    border-radius: 20px;
+    gap: 1rem;
     width: 100%;
-    max-width: 450px;
-    box-shadow: var(--shadow-lg);
-    animation: slideUp 0.3s ease;
+    align-items: center;
 }
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+
+.input-group {
+    position: relative;
+    flex: 1;
 }
-@media (max-width: 600px) {
-    .modal-content {
-        width: 90%;
-        margin: 1rem;
+
+.input-group.small {
+    flex: 0 0 150px;
+}
+
+.clean-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
+    font-size: 1rem;
+    border-radius: 99px; /* Inner roundness */
+    background: rgba(0,0,0,0.03);
+    transition: background 0.2s;
+}
+
+.clean-input:focus {
+    background: rgba(0,0,0,0.06);
+    outline: none;
+}
+
+.input-icon-inline {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none;
+}
+
+.btn-add {
+    border-radius: 99px;
+    padding: 0.8rem 1.5rem;
+    flex-shrink: 0;
+}
+
+/* Grid Layout */
+.courses-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.course-card {
+    margin-bottom: 0; /* Override */
+    border-radius: 24px;
+}
+
+@media (max-width: 768px) {
+    .inline-form {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    .input-group, .input-group.small, .btn-add {
+        width: 100%;
+        flex: none;
+    }
+    .quick-add-bar {
+        border-radius: 24px; /* Less pill-like on mobile */
         padding: 1.5rem;
     }
+    .desktop-only { display: inline; } /* Keep text on mobile for clarity */
 }
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-.modal-header h3 { font-size: 1.3rem; margin: 0; }
-.close-btn { background: none; border: none; cursor: pointer; color: var(--text-light); }
+
+/* Modal updates */
 .modal-actions {
     display: flex;
     gap: 1rem;
@@ -405,7 +429,7 @@ onMounted(() => {
 }
 .btn {
     padding: 0.8rem 1.5rem;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
     border: none;
     cursor: pointer;
