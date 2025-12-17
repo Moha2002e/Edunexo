@@ -252,9 +252,9 @@ onMounted(() => {
   border: none;
   cursor: pointer;
 }
-.icon-btn.delete { color: #CBD5E1; }
+.icon-btn.delete { color: #1e293b; } /* Dark/Black for visibility */
 .icon-btn.delete:hover { color: #EF4444; background: #FEF2F2; }
-.icon-btn.edit { color: #CBD5E1; }
+.icon-btn.edit { color: #1e293b; } /* Dark/Black for visibility */
 .icon-btn.edit:hover { color: var(--primary); background: #EFF6FF; }
 
 
@@ -391,7 +391,7 @@ onMounted(() => {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--text-light);
+    color: #1e293b; /* Darker icon color */
     pointer-events: none;
 }
 

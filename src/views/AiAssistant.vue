@@ -340,7 +340,12 @@ const copyToClipboard = async () => {
 .btn-upgrade { display: inline-block; background: #F59E0B; color: white; padding: 0.8rem 2rem; border-radius: 99px; margin-top: 1.5rem; text-decoration: none; font-weight: bold; }
 .blurred { filter: blur(8px); opacity: 0.6; pointer-events: none; }
 .ai-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
-@media (max-width: 900px) { .ai-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { 
+    .ai-grid { grid-template-columns: 1fr; } 
+    .flex-between { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .history-btn { width: 100%; justify-content: center; }
+    .result-content, .quiz-interface, .flashcards-interface { padding: 1rem; }
+}
 .full-width { background: var(--primary); color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 600; width: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; margin-top: 1rem; }
 .loading-state, .placeholder-result { padding: 4rem; text-align: center; color: var(--text-light); }
 .spinner { width: 40px; height: 40px; border: 3px solid #E2E8F0; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s infinite; margin: 0 auto 1rem; }

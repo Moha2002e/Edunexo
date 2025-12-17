@@ -347,7 +347,7 @@ onMounted(() => {
   position: absolute;
   left: 12px;
   top: 14px;
-  color: #95a5a6;
+  color: #1e293b; /* Date/Course icon to black/dark */
   pointer-events: none;
 }
 .input-with-icon input, .input-with-icon select {
