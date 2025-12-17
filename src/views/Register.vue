@@ -308,7 +308,7 @@ const registerWithGoogle = async () => {
 }
 
 .google-btn {
-    background: white;
+    background: var(--surface);
     color: var(--text-dark);
     border: 1px solid var(--border-color);
     font-weight: 600;
@@ -321,7 +321,7 @@ const registerWithGoogle = async () => {
     border-radius: 12px;
 }
 .google-btn:hover {
-    background: #F8FAFC;
-    border-color: #CBD5E1;
+    background: var(--surface-hover);
+    border-color: var(--primary);
 }
 </style>
