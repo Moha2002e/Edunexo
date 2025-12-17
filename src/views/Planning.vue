@@ -1,8 +1,24 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { Calendar, Trash2, BookOpen, Clock, PlayCircle, List, LayoutGrid, X } from 'lucide-vue-next';
-// ...
+import { db, auth } from '../firebase/firebase';
+import { collection, addDoc, getDocs, doc, query, writeBatch, where } from 'firebase/firestore'; 
+// FullCalendar Imports
+import FullCalendar from '@fullcalendar/vue3';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+
 const selectedTask = ref(null);
+const courses = ref([]);
+const planning = ref([]);
+const viewMode = ref('list'); // 'list' | 'calendar'
+const form = ref({
+  courseId: '',
+  examDate: '',
+  chaptersCount: 1,
+  dailyHours: 2
+});
+const isLoading = ref(true);
 
 const closeTaskModal = () => {
     selectedTask.value = null;
