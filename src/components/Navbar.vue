@@ -1,5 +1,5 @@
 <script setup>
-import { LayoutDashboard, BookOpen, Calendar, Menu, X, LogOut, Sparkles, Crown, Shield } from 'lucide-vue-next';
+import { LayoutDashboard, BookOpen, Calendar, Menu, X, LogOut, Sparkles, Crown, Shield, Sun, Moon } from 'lucide-vue-next';
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { auth } from '../firebase/firebase'; 
@@ -12,10 +12,30 @@ const user = ref(null);
 
 const toggleMenu = () => isMenuOpen.value = !isMenuOpen.value;
 
+const isDark = ref(false);
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value;
+  if (isDark.value) {
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }
+};
+
 onMounted(() => {
   auth.onAuthStateChanged((u) => {
     user.value = u;
   });
+  
+  // Init Theme
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    isDark.value = true;
+    document.documentElement.classList.add('dark');
+  }
 });
 
 const handleLogout = async () => {
@@ -71,6 +91,11 @@ const showNavbar = computed(() => {
           <Shield size="18" /> <span class="link-text">Admin</span>
         </router-link>
         
+        <!-- Theme Toggle -->
+        <button @click="toggleTheme" class="theme-btn" :title="isDark ? 'Passer en mode clair' : 'Passer en mode sombre'">
+            <component :is="isDark ? Sun : Moon" size="18" />
+        </button>
+
         <div class="divider mobile-only"></div>
 
         <button @click="handleLogout" class="logout-btn">
@@ -177,6 +202,23 @@ const showNavbar = computed(() => {
   background: #fee2e2;
   color: #ef4444;
   border-radius: 99px;
+}
+
+.theme-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    padding: 0.6rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.theme-btn:hover {
+    background: var(--surface-hover);
+    color: var(--primary);
 }
 
 .menu-toggle {
