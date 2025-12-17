@@ -249,7 +249,10 @@ const copyToClipboard = async () => {
         <div v-if="quizData" id="quiz-result-container" class="quiz-interface">
             <div class="quiz-header">
                 <h3>Quiz de révision</h3>
-                <button @click="downloadPDF" class="icon-btn"><Download size="16"/></button>
+                <div class="header-right" style="display:flex; align-items:center; gap:10px;">
+                    <div v-if="quizCompleted" class="score-badge header-score">Note: {{currentQuizScore}}/{{quizData.length}}</div>
+                    <button @click="downloadPDF" class="icon-btn"><Download size="16"/></button>
+                </div>
             </div>
             <div v-for="(q, qIdx) in quizData" :key="qIdx" class="quiz-question">
                 <p class="q-text"><strong>{{ qIdx + 1 }}.</strong> {{ q.text }}</p>
@@ -399,4 +402,21 @@ textarea { background: var(--bg-color); }
     font-weight: 700;
     font-size: 0.85rem;
 }
+.score-badge {
+    background: #DCFCE7;
+    color: #15803d;
+    padding: 0.5rem 1rem;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: 1px solid #86EFAC;
+    animation: popIn 0.3s ease;
+}
+.main-score {
+    font-size: 1.2rem;
+    padding: 1rem 2rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+@keyframes popIn { from{transform:scale(0.8);opacity:0;} to{transform:scale(1);opacity:1;} }
 </style>
