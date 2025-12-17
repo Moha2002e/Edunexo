@@ -94,13 +94,14 @@ export function useAiAssistant(isPremium, apiKey) {
                     userPrompt = `Génère un quiz pertinent de ${qCount} questions sur le sujet :\n\n${input}`;
                     break;
                 case 'flashcard':
+                    const fcCount = options.questionCount || 10;
                     systemPrompt = `Tu es un expert en mémorisation (Spaced Repetition). Tu DOIS répondre UNIQUEMENT avec un objet JSON valide.
                      Structure : { "cards": [ { "front": "Concept / Question", "back": "Définition courte / Réponse" } ] }
-                     Crée 10 à 15 cartes.
+                     Crée exactement ${fcCount} cartes.
                      Règles :
                      - Le recto doit être une question précise ou un terme.
                      - Le verso doit être court et percutant.`;
-                    userPrompt = `Crée des flashcards optimisées pour ce contenu :\n\n${input}`;
+                    userPrompt = `Crée ${fcCount} flashcards optimisées pour ce contenu :\n\n${input}`;
                     break;
                 case 'explain':
                     systemPrompt = "Tu es le meilleur vulgarisateur du monde (niveau ELI5 + Expert). Ta méthode :\n" +

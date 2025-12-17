@@ -209,8 +209,9 @@ const copyToClipboard = async () => {
                 rows="10">
             </textarea>
              <!-- Quiz Options -->
-            <div v-if="selectedMode === 'quiz'" class="quiz-options">
-                <label>Nb Questions :</label>
+            <!-- Quiz/Flashcard Options -->
+            <div v-if="selectedMode === 'quiz' || selectedMode === 'flashcard'" class="quiz-options">
+                <label>{{ selectedMode === 'flashcard' ? 'Nb Cartes :' : 'Nb Questions :' }}</label>
                 <input type="number" v-model="questionCount" min="1" max="50" class="small-input" />
             </div>
         </div>
