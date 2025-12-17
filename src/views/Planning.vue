@@ -281,8 +281,8 @@ onMounted(() => {
                     <div class="day-header">{{ formatDate(group.date) }}</div>
                     <div class="day-tasks">
                         <div v-for="(item, idx) in group.items" :key="idx" class="task-card">
-                        <span class="badg">{{ item.courseName }}</span>
-                        <span class="task-name">{{ item.task }}</span>
+                          <span class="task-name">{{ item.task }}</span>
+                          <span class="badg">{{ item.courseName }}</span>
                         </div>
                     </div>
                 </div>
@@ -427,25 +427,33 @@ onMounted(() => {
   gap: 0.8rem;
 }
 .task-card {
-  background: var(--surface); 
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  padding: 1.2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  border: 1px solid rgba(255,255,255,0.6);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: transform 0.2s, background 0.2s;
+}
+.task-card:hover {
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateY(-2px);
 }
 .badg {
-  font-size: 0.75rem;
-  background: var(--bg-color);
-  color: var(--text-light);
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-  font-weight: 600;
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.9);
+  color: var(--primary);
+  border: 1px solid rgba(0,0,0,0.05);
+  padding: 0.3rem 0.8rem;
+  border-radius: 99px;
+  font-weight: 700;
 }
 .task-name {
-  font-weight: 500;
+  font-weight: 700;
+  font-size: 1.05rem;
   color: var(--text-dark);
 }
 

@@ -345,7 +345,10 @@ onMounted(() => {
 .quick-add-bar {
     padding: 1rem;
     margin-bottom: 2rem;
-    background: var(--surface);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     border-radius: 99px; /* Pill shape for the bar */
     display: flex;
     align-items: center;
