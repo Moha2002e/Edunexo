@@ -180,7 +180,7 @@ const copyToClipboard = async () => {
     <!-- Premium Banner (Small) -->
     <div v-if="!isPremiumLoading && !hasAccess()" class="premium-banner-small">
         <span>🚀 <strong>Mode gratuit actif</strong> : 3 essais/jour. Débloquez tout avec Premium.</span>
-        <router-link to="/premium" class="btn-xs">Uppgrade</router-link>
+        <router-link to="/premium" class="btn-xs">Upgrade</router-link>
     </div>
 
     <div class="ai-grid">

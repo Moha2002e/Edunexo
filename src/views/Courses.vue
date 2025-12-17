@@ -72,12 +72,17 @@ onMounted(() => {
         <form @submit.prevent="handleAddCourse" class="inline-form">
             <div class="input-group">
                 <BookOpen size="18" class="input-icon-inline" />
-                <input v-model="newCourse.name" placeholder="Nom de la matière..." required class="clean-input" />
+                <input v-model="newCourse.name" placeholder="Matière (ex: Maths)" required class="clean-input" />
+            </div>
+
+            <div class="input-group">
+                <User size="18" class="input-icon-inline" /> <!-- Icone User importée -->
+                <input v-model="newCourse.teacher" placeholder="Professeur (ex: M. Dupont)" class="clean-input" />
             </div>
             
             <div class="input-group small">
                 <GraduationCap size="18" class="input-icon-inline" />
-                <input type="number" v-model="newCourse.totalChapters" min="1" placeholder="Chapitres" required class="clean-input" />
+                <input type="number" v-model="newCourse.totalChapters" min="1" placeholder="Nb Chapitres" required class="clean-input" />
             </div>
 
             <button type="submit" class="primary btn-add">
