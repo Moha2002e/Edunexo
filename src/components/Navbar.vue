@@ -108,14 +108,16 @@ const showNavbar = computed(() => {
 
 <style scoped>
 /* Updated Navbar Styles */
+/* Updated Navbar Styles */
 .navbar {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--surface);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 100;
   padding: 0.75rem 0;
+  transition: background 0.3s, border-color 0.3s;
 }
 .nav-container {
   max-width: 1100px;
@@ -241,7 +243,7 @@ const showNavbar = computed(() => {
     top: 100%;
     left: 0;
     width: 100%;
-    background: white;
+    background: var(--surface);
     flex-direction: column;
     padding: 1rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
