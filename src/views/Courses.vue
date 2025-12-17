@@ -345,10 +345,10 @@ onMounted(() => {
 .quick-add-bar {
     padding: 1rem;
     margin-bottom: 2rem;
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--surface);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.6);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--glass-shadow);
     border-radius: 99px; /* Pill shape for the bar */
     display: flex;
     align-items: center;
@@ -377,13 +377,16 @@ onMounted(() => {
     padding: 0.8rem 1rem 0.8rem 2.5rem;
     font-size: 1rem;
     border-radius: 99px; /* Inner roundness */
-    background: rgba(0,0,0,0.03);
-    transition: background 0.2s;
+    background: var(--input-bg);
+    color: var(--text-dark);
+    transition: background 0.2s, color 0.2s;
+    border: 1px solid transparent; /* Prevent jump on focus if needed, or matched border */
 }
 
 .clean-input:focus {
-    background: rgba(0,0,0,0.06);
+    background: var(--surface-hover);
     outline: none;
+    border-color: var(--primary);
 }
 
 .input-icon-inline {
@@ -391,8 +394,9 @@ onMounted(() => {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #1e293b; /* Darker icon color */
+    color: var(--text-dark); /* Auto-switches: Slate in Light, White in Dark */
     pointer-events: none;
+    opacity: 0.7;
 }
 
 .btn-add {
