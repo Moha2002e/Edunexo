@@ -8,30 +8,31 @@
   box-sizing: inherit;
 }
 
-/* Shared Colors */
---primary: #4F46E5;
---primary-hover: #4338CA;
---secondary: #EC4899;
---accent: #10B981;
---danger: #EF4444;
+:root {
+  /* Shared Colors */
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --secondary: #EC4899;
+  --accent: #10B981;
+  --danger: #EF4444;
 
-/* Light Theme (Default) */
---bg-color: #f8fafc;
-/* Fallback */
---surface: rgba(255, 255, 255, 0.65);
---surface-hover: rgba(255, 255, 255, 0.8);
---border-color: rgba(255, 255, 255, 0.4);
---glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  /* Light Theme (Default) */
+  --bg-color: #f8fafc;
+  /* Fallback */
+  --surface: rgba(255, 255, 255, 0.65);
+  --surface-hover: rgba(255, 255, 255, 0.8);
+  --border-color: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 
---text-dark: #1e293b;
---text-light: #475569;
---input-bg: rgba(255, 255, 255, 0.4);
+  --text-dark: #1e293b;
+  --text-light: #475569;
+  --input-bg: rgba(255, 255, 255, 0.4);
 
---font-family: 'Outfit',
--apple-system,
-BlinkMacSystemFont,
-sans-serif;
---mac-radius: 24px;
+  --font-family: 'Outfit',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  --mac-radius: 24px;
 }
 
 /* Dark Mode Overrides */
@@ -213,17 +214,18 @@ textarea:focus {
 }
 
 /* Cards */
-background: var(--surface);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid var(--border-color);
-border-radius: var(--mac-radius);
-padding: 2.5rem;
-box-shadow: var(--glass-shadow);
-margin-bottom: 2rem;
-transition: transform 0.3s ease,
-box-shadow 0.3s ease,
-background 0.3s;
+.card {
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--mac-radius);
+  padding: 2.5rem;
+  box-shadow: var(--glass-shadow);
+  margin-bottom: 2rem;
+  transition: transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s;
 }
 
 .card:hover {
@@ -239,24 +241,25 @@ background 0.3s;
   padding-bottom: 5rem;
 }
 
-background: var(--surface);
-backdrop-filter: blur(25px);
--webkit-backdrop-filter: blur(25px);
-padding: 1rem 2rem;
-display: flex;
-justify-content: space-between;
-align-items: center;
-border: 1px solid var(--border-color);
-position: sticky;
-top: 1.5rem;
-z-index: 999;
-margin: 0 auto 2rem auto;
-border-radius: 30px;
-box-shadow: var(--glass-shadow);
-width: 90%;
-max-width: 1200px;
-transition: background 0.3s,
-border-color 0.3s;
+.navbar {
+  background: var(--surface);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  position: sticky;
+  top: 1.5rem;
+  z-index: 999;
+  margin: 0 auto 2rem auto;
+  border-radius: 30px;
+  box-shadow: var(--glass-shadow);
+  width: 90%;
+  max-width: 1200px;
+  transition: background 0.3s,
+    border-color 0.3s;
 }
 
 .logo {
