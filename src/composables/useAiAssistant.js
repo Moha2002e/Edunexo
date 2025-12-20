@@ -63,6 +63,12 @@ export function useAiAssistant(isPremium, apiKey) {
         planningData.value = null;
 
         try {
+            if (!apiKey || apiKey.includes('your_api_key_here')) {
+                generatedContent.value = "⚠️ Configuration manquante : Clé API invalide ou non configurée.\n\n1. Obtenez une clé sur [console.groq.com](https://console.groq.com/keys)\n2. Ajoutez-la dans le fichier `.env` : `VITE_GROQ_API_KEY=votre_clé_ici`\n3. Redémarrez le serveur.";
+                isLoading.value = false;
+                return;
+            }
+
             let systemPrompt = "";
             let userPrompt = "";
 
@@ -180,7 +186,11 @@ export function useAiAssistant(isPremium, apiKey) {
 
         } catch (error) {
             console.error("Groq Error:", error);
-            generatedContent.value = "Une erreur est survenue lors de la génération.";
+            if (error?.status === 401 || error?.error?.code === 'invalid_api_key') {
+                generatedContent.value = "🔒 Erreur 401 : Clé API invalide.\nVérifiez votre fichier .env et redémarrez.";
+            } else {
+                generatedContent.value = `Une erreur est survenue : ${error?.message || "Erreur inconnue"}`;
+            }
         } finally {
             isLoading.value = false;
         }
